@@ -6,6 +6,7 @@
 
 ## Brief description of work distribution (max. 200 words)
 
+Tim was primarily responsible for 1.1, 
 E.g.: NAME1 was primarily responsible for tasks Y1, Y2. NAME2 was responsible for Y3, etc. All team members participated and contributed to all tasks.
 
 ## Git fame distribution of the repository
