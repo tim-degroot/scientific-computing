@@ -48,17 +48,16 @@ class vibrating_string:
         self.x = x
         self.psi = psi
 
-    def plot(self):
+    def plot(self, filename=None, show=True):
         plt.figure()
         time_points = [
             0,
             self.Nt // 4,
             self.Nt // 2,
-            self.Nt // 3,
             3 * self.Nt // 4,
             self.Nt,
         ]
-        colors = ["tab:blue", "tab:green", "tab:red", "tab:orange", "tab:brown"]
+        colors = ["tab:blue", "tab:orange", "tab:green", "tab:red", "tab:purple"]
         for t_idx, color in zip(time_points, colors):
             plt.plot(
                 self.x, self.psi[:, t_idx], color=color, label=f"t={t_idx*self.dt:.3f}"
@@ -68,9 +67,16 @@ class vibrating_string:
         plt.ylabel(r"$\Psi(x_i, t_n)$")
         plt.title(f"Time evolution of vibrating string\n{self.equation}")
         plt.legend()
-        plt.show()
 
-    def animate(self, interval=30):
+        if filename is not None:
+            plt.savefig(filename)
+
+        if show:
+            plt.show()
+
+        plt.clf()
+
+    def animate(self, interval=30, filename=None, show=True):
         fig, ax = plt.subplots()
         (line,) = ax.plot(self.x, self.psi[:, 0], color="tab:blue")
         ax.set_xlim(0, self.L)
@@ -85,27 +91,34 @@ class vibrating_string:
             return (line,)
 
         anim = FuncAnimation(fig, update, frames=self.Nt + 1, interval=interval)
-        plt.show()
+
+        if filename is not None:
+            anim.save(filename)
+
+        if show:
+            plt.show()
+        
+        plt.clf()
 
 
 if __name__ == "__main__":
-    args = {"N": 100, "Nt": 100, "L": 1, "c": 1, "dt": 0.001}
+    args = {"N": 100, "Nt": 200, "L": 1, "c": 1, "dt": 0.001}
     Bi = vibrating_string(
         f=lambda x: sin(2 * pi * x), equation=r"$\Psi(x,t=0)=\sin(2\pi x)$", **args
     )
-    Bi.plot()
-    Bi.animate()
+    Bi.plot(filename="Bi.jpg", show=False)
+    Bi.animate(filename="Bi.gif", show=False)
 
     Bii = vibrating_string(
         f=lambda x: sin(5 * pi * x), equation=r"$\Psi(x,t=0)=\sin(5\pi x)$", **args
     )
-    Bii.plot()
-    Bii.animate()
+    Bii.plot(filename="Bii.jpg", show=False)
+    Bii.animate(filename="Bii.gif", show=False)
 
     Biii = vibrating_string(
         f=lambda x: sin(5 * pi * x) if 2 / 5 > x > 1 / 5 else 0,
         equation=r"$\Psi(x,t=0)=\sin(5\pi x)$ if $1/5<x<2/5$, else $\Psi=0$",
         **args,
     )
-    Biii.plot()
-    Biii.animate()
+    Biii.plot(filename="Biii.jpg", show=False)
+    Biii.animate(filename="Biii.gif", show=False)
