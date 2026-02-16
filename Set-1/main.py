@@ -32,6 +32,7 @@ class vibrating_string:
     animate(interval=30, filename=None, show=True):
         Visualizes the time evolution in an animation.
     """
+
     def __init__(self, f, L, c, dt, N, Nt, equation):
         self.f = f
         self.L = L
@@ -124,7 +125,7 @@ class vibrating_string:
 
         if show:
             plt.show()
-        
+
         plt.clf()
 
 
