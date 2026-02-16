@@ -5,6 +5,33 @@ from matplotlib.animation import FuncAnimation
 
 
 class vibrating_string:
+    """
+    Implements the numerical solution of a one-dimensional wave equation.
+
+    Attributes
+    ----------
+    f : <lambda>(x)
+        The initial condition of the string.
+    L : int
+        Length of the string.
+    c : float
+        Parameter c in the one-dimensional wave equation.
+    dt : float
+        Length of the timestep.
+    N : int
+        Number of points to discretize the string into.
+    Nt : int
+        Number of timesteps to calculate.
+    equation : str
+        The TeX rendering of the equation, used for visualization.
+
+    Methods
+    -------
+    plot(filename=None, show=True):
+        Visualizes the time evolution of the position of the string at 0%, 25%, 50%, 75% and 100% of the time.
+    animate(interval=30, filename=None, show=True):
+        Visualizes the time evolution in an animation.
+    """
     def __init__(self, f, L, c, dt, N, Nt, equation):
         self.f = f
         self.L = L
