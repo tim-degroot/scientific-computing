@@ -6,8 +6,7 @@
 
 ## Brief description of work distribution (max. 200 words)
 
-Tim was primarily responsible for 1.1, 
-E.g.: NAME1 was primarily responsible for tasks Y1, Y2. NAME2 was responsible for Y3, etc. All team members participated and contributed to all tasks.
+Tim was primarily responsible for derivation, implementing and writing about the discretized wave equation. Theyn was primarily responsible for implementing and writing about the Time Dependent Diffusion Equation. Luca was primarily resonsible for implementing the Jacobi iteration, the Gauss-Seidel method and SOR.
 
 ## Git fame distribution of the repository
 
