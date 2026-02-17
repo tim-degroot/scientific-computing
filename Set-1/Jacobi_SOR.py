@@ -12,11 +12,10 @@ def Jacobi_Iteration(N = 50, epsilon=1e-5):
     c[0,:] = np.ones(N+1)
     c_new = np.copy(c)
     it = 0
-    while 0<1:
+    while True:
         for i in range(N+1):
-            for j in range(N+1):
-                if j!=0 and j!=N:
-                    c_new[j][i] = (1/4) * (c[j][(i+1) % (N+1)] + c[j][(i-1) % (N+1)] + c[j+1][i] + c[j-1][i])
+            for j in range(1, N):
+                c_new[j][i] = (1/4) * (c[j][(i+1) % (N+1)] + c[j][(i-1) % (N+1)] + c[j+1][i] + c[j-1][i])
         it += 1
         delta = np.absolute(c_new - c)
         if np.max(delta) < epsilon:
@@ -25,16 +24,24 @@ def Jacobi_Iteration(N = 50, epsilon=1e-5):
     return c_new.round(2), it
 
 
-def SOR_Iteration(omega, N = 50, epsilon=1e-5):
+def SOR_Iteration(omega, N = 50, epsilon=1e-5, coor_size=[], max_iter=5000):
     c = np.zeros((N+1,N+1))
     c[0,:] = np.ones(N+1)
     c_new = np.copy(c)
+
+    c_mask = np.zeros((51,51), dtype=bool)
+    for l in coor_size:
+        i,j,k = l[0],l[1],l[2]
+        obj = np.ones((k,k), dtype=bool)
+        c_mask[i:i+k, j:j+k] = obj
+    
     it = 0
-    while True:
+    while it<max_iter:
         for i in range(N+1):
             for j in range(1,N):
                 # if j!=0 and j!=N:
-                c_new[j][i] = ((omega/4)*(c[j][(i+1) % (N+1)] + c_new[j][(i-1) % (N+1)] + c[j+1][i] + c_new[j-1][i]) + (1-omega)*c[j][i])
+                if c_mask[j][i] == False:
+                    c_new[j][i] = (omega/4)*(c[j][(i+1) % (N+1)] + c_new[j][(i-1) % (N+1)] + c[j+1][i] + c_new[j-1][i]) + (1-omega)*c[j][i]
         it += 1
         delta = np.absolute(c_new - c)
         if np.max(delta) < epsilon:
@@ -88,8 +95,8 @@ def SOR_Optimize(omega):
     _, it = SOR_Iteration(omega[-1])
     return it
 
-op_omega = sp.optimize.minimize(SOR_Optimize, x0=1.8, bounds=[(1.7, 2.0)])
-print(op_omega)
+# op_omega = sp.optimize.minimize(SOR_Optimize, x0=1.8, bounds=[(1.7, 2.0)])
+# print(op_omega)
 
 # omegas = np.linspace(1.7, 2.0-1e-6, 10)
 # iters = [SOR_Optimize([w]) for w in omegas]
@@ -98,3 +105,19 @@ print(op_omega)
 # best_omega = omegas[best_idx]
 # best_iters = iters[best_idx]
 # print(best_omega, best_iters)
+
+# ========================================
+# K
+# ========================================
+
+c_1, it_1 = SOR_Iteration(1.8, coor_size=[[20,20,10]])
+print(it_1)
+
+plt.imshow(c_1, cmap='hot_r', interpolation='nearest')
+plt.show()
+
+c_2, it_2 = SOR_Iteration(1.8, coor_size=[[10,10,5], [30,30,5]])
+print(it_2)
+
+plt.imshow(c_2, cmap='hot_r', interpolation='nearest')
+plt.show()
