@@ -90,15 +90,15 @@ it_vals_SOR = [[], [], [], [], [], [], []]
 # J
 # ========================================
 
-def SOR_Optimize(omega):
+def SOR_Optimize(omega, coor_size=[]):
     # omega = float(omega)
-    _, it = SOR_Iteration(omega[-1])
+    _, it = SOR_Iteration(omega[-1], coor_size=coor_size)
     return it
 
 # op_omega = sp.optimize.minimize(SOR_Optimize, x0=1.8, bounds=[(1.7, 2.0)])
 # print(op_omega)
 
-# omegas = np.linspace(1.7, 2.0-1e-6, 10)
+omegas = np.linspace(1.7, 2.0-1e-6, 100)
 # iters = [SOR_Optimize([w]) for w in omegas]
 
 # best_idx = np.argmin(iters)
@@ -110,14 +110,31 @@ def SOR_Optimize(omega):
 # K
 # ========================================
 
+c_0, it_0 = SOR_Iteration(1.8)
+print(it_0)
+# plt.imshow(c_0, cmap='hot_r', interpolation='nearest')
+# plt.show()
+
 c_1, it_1 = SOR_Iteration(1.8, coor_size=[[20,20,10]])
 print(it_1)
-
-plt.imshow(c_1, cmap='hot_r', interpolation='nearest')
-plt.show()
+# plt.imshow(c_1, cmap='hot_r', interpolation='nearest')
+# plt.show()
 
 c_2, it_2 = SOR_Iteration(1.8, coor_size=[[10,10,5], [30,30,5]])
 print(it_2)
+# plt.imshow(c_2, cmap='hot_r', interpolation='nearest')
+# plt.show()
 
-plt.imshow(c_2, cmap='hot_r', interpolation='nearest')
-plt.show()
+iters_1 = [SOR_Optimize([w], [[20,20,10]]) for w in omegas]
+iters_2 = [SOR_Optimize([w], [[10,10,5], [30,30,5]]) for w in omegas]
+
+best_idx_1 = np.argmin(iters_1)
+best_omega_1 = omegas[best_idx_1]
+best_iters_1 = iters_1[best_idx_1]
+
+best_idx_2 = np.argmin(iters_2)
+best_omega_2 = omegas[best_idx_2]
+best_iters_2 = iters_2[best_idx_2]
+
+print(best_omega_1, best_iters_1)
+print(best_omega_2, best_iters_2)
