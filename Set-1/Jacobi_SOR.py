@@ -24,24 +24,27 @@ def Jacobi_Iteration(N = 50, epsilon=1e-5):
     return c_new.round(2), it
 
 
-def SOR_Iteration(omega, N = 50, epsilon=1e-5, coor_size=[], max_iter=5000):
+def SOR_Iteration(omega, N = 50, epsilon=1e-5, coor_size=[], insulation=None, max_iter=5000):
     c = np.zeros((N+1,N+1))
     c[0,:] = np.ones(N+1)
     c_new = np.copy(c)
 
-    c_mask = np.zeros((51,51), dtype=bool)
-    for l in coor_size:
+    c_obj = np.ones((51,51))
+    if insulation == None:
+        insulation = np.zeros(len(coor_size))
+    for n, l in enumerate(coor_size):
         i,j,k = l[0],l[1],l[2]
-        obj = np.ones((k,k), dtype=bool)
-        c_mask[i:i+k, j:j+k] = obj
-    
+        obj = insulation[n]*np.ones((k,k))
+        c_obj[i:i+k, j:j+k] = obj
+
     it = 0
     while it<max_iter:
         for i in range(N+1):
             for j in range(1,N):
                 # if j!=0 and j!=N:
-                if c_mask[j][i] == False:
+                if c_obj[j][i] != 0:
                     c_new[j][i] = (omega/4)*(c[j][(i+1) % (N+1)] + c_new[j][(i-1) % (N+1)] + c[j+1][i] + c_new[j-1][i]) + (1-omega)*c[j][i]
+                    c_new[j][i] *= c_obj[j][i]
         it += 1
         delta = np.absolute(c_new - c)
         if np.max(delta) < epsilon:
@@ -112,29 +115,43 @@ omegas = np.linspace(1.7, 2.0-1e-6, 100)
 
 c_0, it_0 = SOR_Iteration(1.8)
 print(it_0)
-# plt.imshow(c_0, cmap='hot_r', interpolation='nearest')
-# plt.show()
+plt.imshow(c_0, cmap='hot_r', interpolation='nearest')
+plt.show()
 
 c_1, it_1 = SOR_Iteration(1.8, coor_size=[[20,20,10]])
 print(it_1)
-# plt.imshow(c_1, cmap='hot_r', interpolation='nearest')
-# plt.show()
+plt.imshow(c_1, cmap='hot_r', interpolation='nearest')
+plt.show()
 
 c_2, it_2 = SOR_Iteration(1.8, coor_size=[[10,10,5], [30,30,5]])
 print(it_2)
-# plt.imshow(c_2, cmap='hot_r', interpolation='nearest')
-# plt.show()
+plt.imshow(c_2, cmap='hot_r', interpolation='nearest')
+plt.show()
 
-iters_1 = [SOR_Optimize([w], [[20,20,10]]) for w in omegas]
-iters_2 = [SOR_Optimize([w], [[10,10,5], [30,30,5]]) for w in omegas]
+# iters_1 = [SOR_Optimize([w], [[20,20,10]]) for w in omegas]
+# iters_2 = [SOR_Optimize([w], [[10,10,5], [30,30,5]]) for w in omegas]
 
-best_idx_1 = np.argmin(iters_1)
-best_omega_1 = omegas[best_idx_1]
-best_iters_1 = iters_1[best_idx_1]
+# best_idx_1 = np.argmin(iters_1)
+# best_omega_1 = omegas[best_idx_1]
+# best_iters_1 = iters_1[best_idx_1]
 
-best_idx_2 = np.argmin(iters_2)
-best_omega_2 = omegas[best_idx_2]
-best_iters_2 = iters_2[best_idx_2]
+# best_idx_2 = np.argmin(iters_2)
+# best_omega_2 = omegas[best_idx_2]
+# best_iters_2 = iters_2[best_idx_2]
 
-print(best_omega_1, best_iters_1)
-print(best_omega_2, best_iters_2)
+# print(best_omega_1, best_iters_1)
+# print(best_omega_2, best_iters_2)
+
+# ========================================
+# J
+# ========================================
+
+c_1, it_1 = SOR_Iteration(1.8, coor_size=[[20,20,10]], insulation=[0.9])
+print(it_1)
+plt.imshow(c_1, cmap='hot_r', interpolation='nearest')
+plt.show()
+
+c_2, it_2 = SOR_Iteration(1.8, coor_size=[[10,10,5], [30,30,5]], insulation=[0.75, 0.25])
+print(it_2)
+plt.imshow(c_2, cmap='hot_r', interpolation='nearest')
+plt.show()
