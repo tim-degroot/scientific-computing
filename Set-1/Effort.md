@@ -10,17 +10,16 @@ Tim was primarily responsible for derivation, implementing and writing about the
 
 ## Git fame distribution of the repository
 
-Date and time: 02-02-2025 T 11:12
-
-Output image of git fame:
+Date and time: 18-02-2025 T 10:24
 
 ```bash
-Processing: 100%|█████████████████████████████████████████████████████████████████████████████████████████| 5/5 [00:00<00:00, 98.70file/s]
-Total commits: 1
-Total ctimes: 5
+Total commits: 14
+Total ctimes: 57
 Total files: 5
-Total loc: 440
-| Author      |   loc |   coms |   fils |  distribution    |
-|:------------|------:|-------:|-------:|:-----------------|
-| tim-degroot |   440 |      1 |      5 | 100.0/ 100/100.0 |
+Total loc: 541
+| Author      |   loc |   coms |   fils |  distribution   |
+|:------------|------:|-------:|-------:|:----------------|
+| Loghserk    |   203 |      1 |      1 | 37.5/ 7.1/20.0  |
+| tim-degroot |   198 |     10 |      3 | 36.6/71.4/60.0  |
+| lnca-dotcom |   140 |      3 |      1 | 25.9/21.4/20.0  |
 ```
