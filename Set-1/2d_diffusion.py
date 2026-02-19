@@ -7,7 +7,7 @@ from scipy.special import erfc
 from matplotlib.animation import FuncAnimation
 
 class TimeDepententDiffusion():
-    def __init__(self, N, D, dt, data_res):
+    def __init__(self, N, D, dt, data_res, times):
         
         self.N = N
         self.D = D
@@ -17,6 +17,7 @@ class TimeDepententDiffusion():
         self.n_timesteps = int(1/dt)
         self.c_init = np.zeros((N, N))
         self.c_init[:,N-1] = 1
+        self.times = times
         
         # Assert stability
         assert (4*self.dt*self.D)/(self.dx**2) <= 1
@@ -24,33 +25,22 @@ class TimeDepententDiffusion():
         @njit
         def single_diffusion(c, dx, dt, D):
             '''
-            Compute the concentrations c at time k+1 based on concentrations at the current time
+            Compute the concentrations c for x and y at time k+1 based on concentrations at time k.
             '''
             
-            X, Y = c.shape
+            N = c.shape[0]
             
             # Create template for k+1
-            next_c = np.zeros((X,Y))
+            next_c = c.copy()
             
-            # Run nested for loop for x and y
-            for i in range(X):
-                for j in range(Y):
-                    
-                    # Boundry conditions for Y
-                    if j == 0:
-                        next_c[i,j] = 0  
-                    elif j == Y-1:
-                        next_c[i,j] = 1
-                    
-                    # Boundry conditions for X
-                    elif i == 0:
-                        next_c[i,j] = c[i,j] + (dt*D) / (dx**2) * (c[i+1, j] + c[X-1, j] + c[i, j+1] + c[i, j-1] - 4*c[i, j])
-                    elif i == X-1:
-                        next_c[i,j] = c[i,j] + (dt*D) / (dx**2) * (c[1, j] + c[i-1, j] + c[i, j+1] + c[i, j-1] - 4*c[i, j])
-                    
-                    # Outside of boundry
-                    else:
-                        next_c[i,j] = c[i,j] + (dt*D) / (dx**2) * (c[i+1, j] + c[i-1, j] + c[i, j+1] + c[i, j-1] - 4*c[i, j])
+            # Run nested for loop for x (i) and y (j)
+            for j in range(N):
+                for i in range(N):
+                    # For j==0 and j==N keep precious value (0 and 1 res.)
+                    if j%(N-1) != 0:
+                        # (i+-1)%N for periodic boundaries x
+                        next_c[i,j] = c[i,j] + (dt*D) / (dx**2) *\
+                            (c[(i+1)%(N), j] + c[(i-1)%(N), j] + c[i, j+1] + c[i, j-1] - 4*c[i, j])
             
             return next_c
 
@@ -61,9 +51,9 @@ class TimeDepententDiffusion():
             c = c_init
             
             # allocate matrix to store data
-            x, y = c.shape
+            N = c.shape[0]
             n_to_save = int(round(1/data_res) + 1)
-            c_data = np.zeros((x, y, n_to_save))
+            c_data = np.zeros((N, N, n_to_save))
             save_index = 0
             
             # Run loop the number of timesteps (+1 to also save t=0)
@@ -84,26 +74,26 @@ class TimeDepententDiffusion():
         self.c_data = run_diffusion(self.c_init, self.n_timesteps, self.dx, self.dt, self.D, self.data_res)
 
     def heatmap(self, filename, show):
-        
-        times = [0.001, 0.01, 0.1, 1]
-        
+    
         # How to plot the subplots
         axes = [(0,0), (0,1), (1,0), (1,1)]
         
         # Create figure
-        fig, axs = plt.subplots(2, 2, figsize=(6,6), sharey=True, sharex=True)
-
-        # Plot a heatmap of the concentration as a function of x and y given timestep t
-        for i, t in enumerate(times):
-            
-            heatmap = axs[axes[i]].pcolor(self.c_data[:,:,int(t/self.data_res)], cmap='plasma')
-            axs[axes[i]].set_title(f't = {t}')
-
+        fig, axs = plt.subplots(2, 2, sharey=True, sharex=True)
         fig.supxlabel('X')
         fig.supylabel('Y')
+        
+        # Plot a heatmap of the concentration as a function of x and y given timestep t
+        for i, t in enumerate(self.times):
+            heatmap = axs[axes[i]].imshow(self.c_data[:,:,int(t/self.data_res)].T[::-1], extent=[0, 1, 0, 1], cmap='plasma')
+            axs[axes[i]].set_title(f't = {t}')
 
-        plt.colorbar(heatmap)
-        plt.tight_layout()
+        # Add colorbar
+        cbar_ax = fig.add_axes([0.875, 0.15, 0.03, 0.7])
+        fig.colorbar(heatmap, ax=axs.ravel().tolist(), aspect=20, cax=cbar_ax)
+        
+        # Make room for colorbar
+        plt.subplots_adjust(right=0.85) 
         
         if filename is not None:
             plt.savefig(filename, dpi=300)
@@ -111,7 +101,7 @@ class TimeDepententDiffusion():
         if show:
             plt.show()
 
-        plt.clf()
+        plt.close(fig)
         
     def compare_analytical(self, filename, show):
         '''
@@ -139,23 +129,20 @@ class TimeDepententDiffusion():
                 c += term_1 - term_2
             
             return c
-        
-        # Time steps to compare
-        time = [0.001, 0.01, 0.1, 1]
-        axes = [(0,0), (0,1), (1,0), (1,1)]
 
         # Create interactive plot
-        fig, axs = plt.subplots(2, 2, figsize=(6,6), sharey=True, sharex=True)
-        fig.supxlabel('X')
-        fig.supylabel('Y')
+        fig, axs = plt.subplots(sharey=True, sharex=True)
+        plt.xlabel('Y')
+        plt.ylabel('error c')
         
-        x = np.linspace(0, 1, self.N)
-
-        for i, t in enumerate(time):
-            axs[axes[i]].plot(x, self.c_data[0,:,int(t/self.data_res)])
-            axs[axes[i]].plot(x, analytical_diffusion(x, t, self.D))
-            axs[axes[i]].set_title(f't = {t}')
-
+        y = np.linspace(0, 1, self.N)
+        
+        # Plot difference between numerical and analyical solution
+        for t in self.times:
+            err = np.abs(self.c_data[0,:,int(t/self.data_res)]-analytical_diffusion(y, t, self.D))
+            axs.loglog(y, err, label=f't={t}')
+        
+        plt.legend()
         plt.tight_layout()
         
         # Save plot
@@ -166,27 +153,30 @@ class TimeDepententDiffusion():
         if show:
             plt.show()
 
-        plt.clf()    
+        plt.close(fig)   
     
-    def animate(self, interval=30, filename=None, show=True):
+    def animate(self, filename=None, show=True, interval=5):
         '''
         animates the 2 dimensional diffusion model over time
         '''
-                
+        
+        # Initialize first frame    
         fig, ax = plt.subplots()
-        heat = ax.imshow(self.c_data[:,:,0], cmap='plasma')
+        heat = ax.imshow(self.c_data[:,:,0].T[::-1], extent=[0, 1, 0, 1], cmap='plasma')
+        plt.colorbar(heat)
         ax.set(xlabel='X', ylabel='Y')
 
         def update(frame):
-            heat.set_data(self.c_data[:,:,frame])
+            heat.set_data(self.c_data[:,:,frame].T[::-1])
+            ax.set_title(f't={np.round(frame*self.data_res, 3)}')
             return (heat,)
 
-
-        anim = FuncAnimation(fig, update, frames=int(np.round(1/self.data_res)/2), interval=interval)
+        # Animate the diffusion model until steady state (t=1)
+        anim = FuncAnimation(fig, update, frames=int(np.round(1/self.data_res)), interval=interval)
 
         # Save animation
         if filename is not None:
-            anim.save(filename)
+            anim.save(filename, dpi=300)
 
         # Show animation
         if show:
@@ -195,9 +185,9 @@ class TimeDepententDiffusion():
         plt.clf()
 
 if __name__ == '__main__':
-    args = {"N": 100, "D": 1, "dt": 0.000025, "data_res": 0.001}
+    args = {"N": 100, "D": 1, "dt": 0.000025, "data_res": 0.001, "times": [0.001, 0.01, 0.1, 1]}
     model = TimeDepententDiffusion(**args)
     model.heatmap("diffusion_heatmap.jpeg", show=True)
     model.compare_analytical("compare_analytical.jpeg", show=True)
-    model.animate()
+    model.animate("diffusion_progression.gif", show=True)
 
