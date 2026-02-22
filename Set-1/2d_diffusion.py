@@ -34,10 +34,9 @@ class TimeDepententDiffusion():
             next_c = c.copy()
             
             # Run nested for loop for x (i) and y (j)
-            for j in range(N):
+            # For j==0 and j==N keep precious value (0 and 1 res.)
+            for j in range(1, N-1):
                 for i in range(N):
-                    # For j==0 and j==N keep precious value (0 and 1 res.)
-                    if j%(N-1) != 0:
                         # (i+-1)%N for periodic boundaries x
                         next_c[i,j] = c[i,j] + (dt*D) / (dx**2) *\
                             (c[(i+1)%(N), j] + c[(i-1)%(N), j] + c[i, j+1] + c[i, j-1] - 4*c[i, j])
@@ -109,7 +108,7 @@ class TimeDepententDiffusion():
         at various timesteps.
         '''
         
-        def analytical_diffusion(x, t, D, n_terms=10):
+        def analytical_diffusion(x, t, D, n_terms=15):
 
             '''
             Solve the analytical solution for the 2D Time-dependent diffusion model with:
@@ -133,14 +132,16 @@ class TimeDepententDiffusion():
         # Create interactive plot
         fig, axs = plt.subplots(sharey=True, sharex=True)
         plt.xlabel('Y')
-        plt.ylabel('error c')
+        plt.ylabel('error (abs(analytical - numerical))')
         
         y = np.linspace(0, 1, self.N)
         
         # Plot difference between numerical and analyical solution
         for t in self.times:
             err = np.abs(self.c_data[0,:,int(t/self.data_res)]-analytical_diffusion(y, t, self.D))
-            axs.loglog(y, err, label=f't={t}')
+            axs.plot(y, err, label=f't={t}')
+            axs.set_yscale('log')
+            axs.set_ylim([10E-15, 0])
         
         plt.legend()
         plt.tight_layout()
@@ -187,7 +188,7 @@ class TimeDepententDiffusion():
 if __name__ == '__main__':
     args = {"N": 100, "D": 1, "dt": 0.000025, "data_res": 0.001, "times": [0.001, 0.01, 0.1, 1]}
     model = TimeDepententDiffusion(**args)
-    model.heatmap("diffusion_heatmap.jpeg", show=True)
+    # model.heatmap("diffusion_heatmap.jpeg", show=True)
     model.compare_analytical("compare_analytical.jpeg", show=True)
-    model.animate("diffusion_progression.gif", show=True)
+    # model.animate("diffusion_progression.gif", show=True)
 
