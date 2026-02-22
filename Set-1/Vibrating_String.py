@@ -50,13 +50,7 @@ class vibrating_string:
         for i in range(1, N):
             psi[i, 0] = f(x[i])
 
-        for i in range(1, N):
-            n = 1
-            psi[i, n] = (
-                c**2 * dt**2 / dx**2 * (psi[i + 1, n] - 2 * psi[i, n] + psi[i - 1, n])
-                + 2 * psi[i, n]
-                - psi[i, n - 1]
-            )
+        psi[1:N, 1] = psi[1:N, 0] + 0.5 * c**2 * dt**2 / dx**2 * (psi[2:N + 1, 0] - 2 * psi[1:N, 0] + psi[0:N - 1, 0])
 
         psi[0, 0] = 0
         psi[N, 0] = 0
