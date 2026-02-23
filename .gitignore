@@ -2,4 +2,6 @@
 .DS_Store
 *.jpg
 *.gif
+*.png
 *.ipynb
+*.pyc
