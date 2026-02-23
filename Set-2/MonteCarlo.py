@@ -8,7 +8,7 @@ spec = [("grid", int64[:, :]), ("ps", float64)]
 
 @jitclass(spec)
 class DLA:
-    def __init__(self, size_x: int, size_y: int, seed: int, ps: float) -> None:
+    def __init__(self, size_x: int, size_y: int, seed: int, ps: float = 1.0) -> None:
         self.grid = np.zeros((size_y, size_x), dtype=np.int64)
         self.ps = ps
         np.random.seed(seed)

@@ -1,7 +1,5 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.lines import Line2D
-
 from MonteCarlo import DLA
 
 
@@ -12,18 +10,37 @@ def plot_grid(grid: np.ndarray, filename: str):
     plt.savefig(filename, bbox_inches="tight", pad_inches=0)
     plt.close()
 
+
+def plot_2x2_comparison(grids: list, labels: list, filename: str):
+    fig, axes = plt.subplots(2, 2, figsize=(8, 8))
+    axes = axes.flatten()
+
+    for i in range(4):
+        ax = axes[i]
+        ax.imshow(grids[i], cmap="binary", aspect="equal")
+        # ax.set_title(labels[i], fontsize=10)
+        ax.axis("off")
+
+    plt.tight_layout()
+    plt.savefig(filename, bbox_inches="tight", pad_inches=0.1)
+    plt.close()
+
+
+simulation = DLA(size_x=100, size_y=100, seed=13)
+simulation.simulate_agents(500)
+plot_grid(grid=simulation.grid, filename=f"MC_DLA_seed_13")
+
 for seed in [8, 13, 21]:
-    simulation = DLA(size_x=100, size_y=100, seed=seed, ps=1)
-    simulation.simulate_agents(100)
+    grids = []
+    ps_values = [0.25, 0.50, 0.75, 1.00]
+    for ps in ps_values:
+        simulation = DLA(size_x=100, size_y=100, seed=seed, ps=ps)
+        simulation.simulate_agents(500)
 
-    plot_grid(grid=simulation.grid, filename=f"MonteCarloDLA_seed_{seed}")
-    print(f"Finished simulation with seed = {seed}")
+        grids.append(simulation.grid)
+        
+    print(f"Finished simulations with seed = {seed}")
 
-
-for ps in np.linspace(0.2, 0.8, 4):
-    simulation = DLA(size_x=100, size_y=100, seed=13, ps=ps)
-    simulation.simulate_agents(100)
-
-    plot_grid(grid=simulation.grid, filename=f"MonteCarloDLA_ps_{ps:.0%}")
-    print(f"Finished simulation with ps = {ps:.0%}")
-
+    plot_2x2_comparison(
+        grids=grids, labels=ps_values, filename=f"MC_DLA_seed_{seed}_comparison"
+    )
