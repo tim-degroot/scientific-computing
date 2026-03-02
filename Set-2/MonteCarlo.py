@@ -1,3 +1,4 @@
+import math
 import numpy as np
 import matplotlib.pyplot as plt
 from numba.experimental import jitclass
@@ -14,7 +15,8 @@ class DLA:
         np.random.seed(seed)
 
         random_x = np.random.randint(0, self.grid.shape[1])
-        self.grid[-1, random_x] = 1  # initialize a first point on the last row
+        midpoint = math.ceil(size_x / 2)
+        self.grid[-1, midpoint] = 1  # initialize a first point on the last row
 
     def simulate_agents(self, n: int):
         while np.count_nonzero(self.grid == 1) < n:
