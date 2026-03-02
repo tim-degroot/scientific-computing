@@ -30,7 +30,7 @@ def plot_2x2_grids(grids: np.ndarray, labels: list, filename: str, plot: bool = 
     plt.show() if plot else plt.close()
 
 
-def plot_grid_overlap(grids: np.ndarray, filename: str, plot: bool=False):
+def plot_grid_overlap(grids: np.ndarray, filename: str, plot: bool = False):
     overlap_grid = np.sum(grids, axis=0)
 
     plt.figure(figsize=(7, 6))
@@ -44,7 +44,9 @@ def plot_grid_overlap(grids: np.ndarray, filename: str, plot: bool=False):
     plt.show() if plot else plt.close()
 
 
-def plot_2x2_overlap(grid_groups: np.ndarray, labels: list, filename: str, plot: bool = False):
+def plot_2x2_overlap(
+    grid_groups: np.ndarray, labels: list, filename: str, plot: bool = False
+):
     fig, axes = plt.subplots(2, 2, figsize=(10, 10))
     axes = axes.flatten()
 
@@ -76,7 +78,9 @@ def plot_2x2_overlap(grid_groups: np.ndarray, labels: list, filename: str, plot:
     plt.show() if plot else plt.close()
 
 
-def plot_4x4_grids(grids: np.ndarray, xlabels: list, ylabels: list, filename: str, plot: bool = False):
+def plot_4x4_grids(
+    grids: np.ndarray, xlabels: list, ylabels: list, filename: str, plot: bool = False
+):
     fig, axes = plt.subplots(4, 4, figsize=(8, 8), sharex=True, sharey=True)
     flat_grids = grids.reshape(16, grids.shape[-2], grids.shape[-1])
     flat_axes = axes.flatten()
@@ -131,19 +135,19 @@ if __name__ == "__main__":
         xlabels=seed_labels,
         ylabels=ps_labels,
         filename="MC_DLA_matrix",
-        plot=True
+        plot=True,
     )
 
     plot_2x2_overlap(
         grid_groups=results,
         labels=seed_labels,
         filename="MC_DLA_seed_overlap",
-        plot=True
+        plot=True,
     )
     plot_2x2_overlap(
         grid_groups=np.transpose(results, (1, 0, 2, 3)),
         labels=ps_labels,
         filename="MC_DLA_ps_overlap",
-        plot=True
+        plot=True,
     )
     print("Running The Gray-Scott model - A reaction-diffusion system")
