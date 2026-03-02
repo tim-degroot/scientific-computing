@@ -124,23 +124,6 @@ if __name__ == "__main__":
 
     grids = results[:, 3, :, :]
     plot_2x2_grids(grids=grids, labels=seed_labels, filename=f"MC_DLA_grid")
-    # for seed_index, seed in enumerate(seeds):
-    #     grids = results[seed_index, :, :, :]
-    #     plot_grid_overlap(grids=grids, filename=f"seed_{seed}_overlap")
-    #     labels = [rf"$p_s={ps_value:.2f}$" for ps_value in ps_values]
-    #     plot_2x2_grids(grids=grids, labels=labels, filename=f"seed_{seed}_2x2")
-
-    #     for ps_index, ps_value in enumerate(ps_values):
-    #         plot_grid(
-    #             grid=results[seed_index, ps_index, :, :],
-    #             filename=f"seed_{seed}_ps_{ps_value:.0%}",
-    #         )
-
-    # for ps_index, ps_value in enumerate(ps_values):
-    #     grids = results[:, ps_index, :, :]
-    #     plot_grid_overlap(grids=grids, filename=f"ps_{ps_value:.0%}_overlap")
-    #     labels = [rf"seed = {seed:.0f}" for seed in seeds]
-    #     plot_2x2_grids(grids=grids, labels=labels, filename=f"ps_{ps_value:.0%}_2x2")
 
     plot_4x4_grids(
         grids=results,
