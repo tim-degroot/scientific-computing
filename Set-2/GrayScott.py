@@ -6,7 +6,7 @@ import matplotlib.animation as animation
 from scipy.special import erfc
 from matplotlib.animation import FuncAnimation
 
-class GrayScott():
+class GrayScott:
     def __init__(self, dt, dx, Du, Dv, feed, kill):
         self.dt = dt
         self.dx = dx

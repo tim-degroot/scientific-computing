@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from MonteCarlo import DLA
+from GrayScott import GrayScott
 
 
 def plot_grid(grid: np.ndarray, filename: str, plot: bool = False):
