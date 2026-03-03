@@ -6,13 +6,14 @@ from MonteCarlo import DLA
 from GrayScott import GrayScott
 
 PLOTS_DIR = "plots/"
+PLOTS_FORMAT = ".pdf"
 
 
 def plot_grid(grid: np.ndarray, filename: str, plot: bool = False):
     plt.figure(figsize=(5, 5))
     plt.imshow(grid, cmap="binary", aspect="equal")
     plt.axis("off")
-    plt.savefig(PLOTS_DIR + filename, bbox_inches="tight", pad_inches=0)
+    plt.savefig(PLOTS_DIR + filename + PLOTS_FORMAT, bbox_inches="tight", pad_inches=0)
     plt.show() if plot else plt.close()
 
 
@@ -30,7 +31,7 @@ def plot_2x2_grids(grids: np.ndarray, labels: list, filename: str, plot: bool = 
         ax.set_yticks([])
 
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
-    plt.savefig(PLOTS_DIR + filename, bbox_inches="tight", pad_inches=0.1)
+    plt.savefig(PLOTS_DIR + filename + PLOTS_FORMAT, bbox_inches="tight", pad_inches=0.1)
     plt.show() if plot else plt.close()
 
 
@@ -44,7 +45,7 @@ def plot_grid_overlap(grids: np.ndarray, filename: str, plot: bool = False):
     plt.colorbar(im, fraction=0.046, pad=0.04, label="Number of Simulations")
 
     plt.axis("off")
-    plt.savefig(PLOTS_DIR + filename, bbox_inches="tight", pad_inches=0.1)
+    plt.savefig(PLOTS_DIR + filename + PLOTS_FORMAT, bbox_inches="tight", pad_inches=0.1)
     plt.show() if plot else plt.close()
 
 
@@ -78,7 +79,7 @@ def plot_2x2_overlap(
         label="Number of Simulations",
     )
 
-    plt.savefig(PLOTS_DIR + filename, bbox_inches="tight")
+    plt.savefig(PLOTS_DIR + filename + PLOTS_FORMAT, bbox_inches="tight")
     plt.show() if plot else plt.close()
 
 
@@ -107,7 +108,7 @@ def plot_4x4_grids(
         ax.set_yticks([])
 
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
-    plt.savefig(PLOTS_DIR + filename, bbox_inches="tight", pad_inches=0.1)
+    plt.savefig(PLOTS_DIR + filename + PLOTS_FORMAT, bbox_inches="tight", pad_inches=0.1)
     plt.show() if plot else plt.close()
 
 
