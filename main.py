@@ -1,14 +1,18 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import os
+import argparse
 from MonteCarlo import DLA
 from GrayScott import GrayScott
+
+PLOTS_DIR = "plots/"
 
 
 def plot_grid(grid: np.ndarray, filename: str, plot: bool = False):
     plt.figure(figsize=(5, 5))
     plt.imshow(grid, cmap="binary", aspect="equal")
     plt.axis("off")
-    plt.savefig(filename, bbox_inches="tight", pad_inches=0)
+    plt.savefig(PLOTS_DIR + filename, bbox_inches="tight", pad_inches=0)
     plt.show() if plot else plt.close()
 
 
@@ -26,7 +30,7 @@ def plot_2x2_grids(grids: np.ndarray, labels: list, filename: str, plot: bool = 
         ax.set_yticks([])
 
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
-    plt.savefig(filename, bbox_inches="tight", pad_inches=0.1)
+    plt.savefig(PLOTS_DIR + filename, bbox_inches="tight", pad_inches=0.1)
     plt.show() if plot else plt.close()
 
 
@@ -40,7 +44,7 @@ def plot_grid_overlap(grids: np.ndarray, filename: str, plot: bool = False):
     plt.colorbar(im, fraction=0.046, pad=0.04, label="Number of Simulations")
 
     plt.axis("off")
-    plt.savefig(filename, bbox_inches="tight", pad_inches=0.1)
+    plt.savefig(PLOTS_DIR + filename, bbox_inches="tight", pad_inches=0.1)
     plt.show() if plot else plt.close()
 
 
@@ -74,7 +78,7 @@ def plot_2x2_overlap(
         label="Number of Simulations",
     )
 
-    plt.savefig(filename, bbox_inches="tight")
+    plt.savefig(PLOTS_DIR + filename, bbox_inches="tight")
     plt.show() if plot else plt.close()
 
 
@@ -103,11 +107,26 @@ def plot_4x4_grids(
         ax.set_yticks([])
 
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
-    plt.savefig(filename, bbox_inches="tight", pad_inches=0.1)
+    plt.savefig(PLOTS_DIR + filename, bbox_inches="tight", pad_inches=0.1)
     plt.show() if plot else plt.close()
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="Run Scientific Computing Set 2 simulations."
+    )
+    parser.add_argument(
+        "--hide",
+        action="store_true",
+        help="Hide interactive plot windows and only save files.",
+    )
+    args = parser.parse_args()
+
+    show_plots = not args.hide
+
+    if "/" in PLOTS_DIR or "\\" in PLOTS_DIR:
+        os.makedirs(os.path.dirname(PLOTS_DIR), exist_ok=True)
+
     size_x, size_y = (100, 100)
     seeds = [5, 8, 13, 21]
     seed_labels = [rf"seed = {seed:.0f}" for seed in seeds]
@@ -135,19 +154,19 @@ if __name__ == "__main__":
         xlabels=seed_labels,
         ylabels=ps_labels,
         filename="MC_DLA_matrix",
-        plot=True,
+        plot=show_plots,
     )
 
     plot_2x2_overlap(
         grid_groups=results,
         labels=seed_labels,
         filename="MC_DLA_seed_overlap",
-        plot=True,
+        plot=show_plots,
     )
     plot_2x2_overlap(
         grid_groups=np.transpose(results, (1, 0, 2, 3)),
         labels=ps_labels,
         filename="MC_DLA_ps_overlap",
-        plot=True,
+        plot=show_plots,
     )
     print("Running The Gray-Scott model - A reaction-diffusion system")
