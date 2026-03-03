@@ -14,13 +14,11 @@ uv run main.py
 uv run main.py --hide
 ```
 
-## Requirements & Installation
+## Requirements & Usage
 
 - **Python:** 3.10+
 - **Package Manager**: [uv](https://docs.astral.sh/uv/)
 - **Dependencies**: Managed via `pyproject.toml` (includes `numpy`, `matplotlib`, `scipy` and `numba`)
-
-Running the code:
 
 `uv run` can be used to run the code for this assignment:
 
@@ -28,19 +26,7 @@ Running the code:
 uv run main.py
 ```
 
-Alternatively, you can use `uv sync` to manually update the environment then activate it before executing a command:
-
-```bash
-uv sync
-.venv\Scripts\activate
-python main.py
-```
-
-If not using `uv`, install via pip:
-
-```bash
-pip install .
-```
+Alternatively, you can use `uv sync` to manually update the environment in `.venv` and activate it or use `pip install .`
 
 ## Project Structure
 
