@@ -52,35 +52,57 @@ class GrayScott:
             v = self.v_prime(v, u)
         
         return u, v
+    
+    def initial_conditions(N, u, v, square_size, noise, seed=42):
+    
+        rng = np.random.default_rng(seed=seed)
+    
+        # Initialize u 
+        u_init = np.ones((N,N)) * u * (1 + (rng.random((N,N)) * 2 - 1) * noise)
 
+        # Initialize v
+        v_init = np.zeros((N,N))
+        
+        ss = int(np.round(square_size/2))                              # Get half the square size and round it
+        
+        v_init[N//2 - ss: N//2 + ss, N//2 - ss: N//2 + ss] = v         # Small square in middel
+        v_init *= (1 + (rng.random((N,N)) * 2 - 1) * noise)      # Add small amount of noise 
     
-if __name__=='__main__':
-    np.seterr(over='raise')
-    # Define parameters
-    args = {"dt": 1, "dx": 1, "Du": 0.16, "Dv": 0.08, 'feed': 0.035, 'kill': 0.06}
+        return u_init, v_init  
     
-    # Intervals
-    N = 256
-    n_timesteps = 20000
-    noise = 0.01
-    
-    # Intial condition
-    u_init = np.ones((N,N)) * 0.5 * (1 + (np.random.random((N,N)) * 2 - 1) * noise)
+    def plot_argsets(u_init, v_init, n_timesteps, args_set, filename, show=True):
+        
+        # Create figure
+        fig, axs = plt.subplots(2,2, figsize=(5,4))
+        
+        axes = [(0,0), (0,1), (1,0), (1,1)]
+        
+        # Plot a heatmap for the different args
+        for i, args in enumerate(args_set):
+            
+            # Create Gray Scott model with given parameters
+            reaction_diffusion = GrayScott(**args)
+            
+            # Run model with initial conditions for n_timesteps
+            u, v = reaction_diffusion.run_gray_scott(u_init, v_init, n_timesteps)
+            
+            # Plot heatmap
+            heatmap = axs[axes[i]].imshow(u, vmin=0, vmax=1, cmap='plasma')
+            axs[axes[i]].axis('off')
 
-    square_size = 5
-    v_init = np.zeros((N,N))
-    v_init[N//2 - square_size: N//2 + square_size, N//2 - square_size: N//2 + square_size] += 0.25 # Small square in middel
-    v_init *= (1 + (np.random.random((N,N)) * 2 - 1) * noise)
-    
-    # Create Gray Scott model with given parameters
-    reaction_diffusion = GrayScott(**args)
-    
-    # Run model with initial conditions for n_timesteps
-    u, v = reaction_diffusion.run_gray_scott(u_init, v_init, n_timesteps)
-    
-    # Plot heatmap of U
-    heat = plt.imshow(u, vmin=0, vmax=1)
-    plt.colorbar(heat)
-    plt.show()
+        plt.tight_layout()
+        
+        # Make room for colorbar
+        plt.subplots_adjust(right=0.85) 
 
+        # Add colorbar
+        cbar_ax = fig.add_axes([0.875, 0.15, 0.03, 0.7])
+        fig.colorbar(heatmap, ax=axs.ravel().tolist(), aspect=20, cax=cbar_ax)
+
+        plt.savefig(filename, bbox_inches="tight", pad_inches=0)
+
+        if show:
+            plt.show()
+            
+        plt.clf()
 

@@ -171,3 +171,20 @@ if __name__ == "__main__":
         plot=show_plots,
     )
     print("Running The Gray-Scott model - A reaction-diffusion system")
+    
+    # Intervals
+    N = 100
+    n_timesteps = 40000         
+    noise = 0.01            # +-1%
+    
+    # Get inital conditions for u and v
+    u_init, v_init = GrayScott.initial_conditions(N, 0.5, 0.25, 10, 0.01)
+    
+    # Define parameters to plot
+    args_set = [{"dt": 1, "dx": 1, "Du": 0.16, "Dv": 0.08, 'feed': 0.035, 'kill': 0.06},
+                {"dt": 1, "dx": 1, "Du": 0.16, "Dv": 0.08, 'feed': 0.05, 'kill': 0.065},
+                {"dt": 1, "dx": 1, "Du": 0.16, "Dv": 0.08, 'feed': 0.015, 'kill': 0.044},
+                {"dt": 1, "dx": 1, "Du": 0.16, "Dv": 0.08, 'feed': 0.04, 'kill': 0.065}]
+    
+    savefile = PLOTS_DIR + 'GrayScott' + PLOTS_FORMAT
+    GrayScott.plot_argsets(u_init, v_init, n_timesteps, args_set, savefile)
