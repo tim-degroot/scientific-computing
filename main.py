@@ -1,9 +1,11 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import os
+from tqdm import tqdm
 import argparse
-from MonteCarlo import MCDLA
+from MonteCarlo import DLA as MCDLA
 from GrayScott import GrayScott
+from DLA import DLA
 
 PLOTS_DIR = "plots/"
 PLOTS_FORMAT = ".pdf"
@@ -130,22 +132,52 @@ if __name__ == "__main__":
 
     size_x, size_y = (100, 100)
     seeds = [5, 8, 13, 21]
+    nu_values = np.arange(0.0, 2.0, step=0.5)
+    nu_values = [1.0]
+    nu_labels = [rf"$\nu={nu_value:.2f}$" for nu_value in nu_values]
+
     seed_labels = [rf"seed = {seed:.0f}" for seed in seeds]
     ps_values = [0.25, 0.50, 0.75, 1.00]
     ps_labels = [rf"$p_s={ps_value:.2f}$" for ps_value in ps_values]
 
     print("Running Diffusion Limited Aggregation")
+    results = np.zeros((len(seeds), len(nu_values), size_x, size_y))
+
+    total_dla_iters = len(seeds) * len(nu_values)
+    with tqdm(total=total_dla_iters, desc="Running Simulations") as pbar:
+        for seed_index, seed in enumerate(seeds):
+            for nu_index, nu_value in enumerate(nu_values):
+                model = DLA(size_x=size_x, size_y=size_y, nu=nu_value, seed=seed)
+                model.simulate_growth_model(500)
+                results[seed_index, nu_index, :, :] = model.grid
+                pbar.update(1)
+
+    # grids = results[:, 3, :, :]
+    grids = results[:, 0, :, :]
+    plot_2x2_grids(grids=grids, labels=seed_labels, filename=f"DLA_grid")
+
+    plot_4x4_grids(
+        grids=results,
+        xlabels=seed_labels,
+        ylabels=nu_labels,
+        filename="DLA_matrix",
+        plot=show_plots,
+    )
+
+    # exit()
 
     print("Running Monte Carlo simulation of DLA")
     N_AGENTS = 500
 
     results = np.zeros((len(seeds), len(ps_values), size_x, size_y))
 
-    for seed_index, seed in enumerate(seeds):
-        for ps_index, ps_value in enumerate(ps_values):
-            simulation = MCDLA(size_x=size_x, size_y=size_y, seed=seed, ps=ps_value)
-            simulation.simulate_agents(N_AGENTS)
-            results[seed_index, ps_index, :, :] = simulation.grid
+    total_dla_iters = len(seeds) * len(ps_values)
+    with tqdm(total=total_dla_iters, desc="Running Simulations") as pbar:
+        for seed_index, seed in enumerate(seeds):
+            for ps_index, ps_value in enumerate(ps_values):
+                simulation = MCDLA(size_x=size_x, size_y=size_y, seed=seed, ps=ps_value)
+                simulation.simulate_agents(N_AGENTS)
+                results[seed_index, ps_index, :, :] = simulation.grid
 
     grids = results[:, 3, :, :]
     plot_2x2_grids(grids=grids, labels=seed_labels, filename=f"MC_DLA_grid")

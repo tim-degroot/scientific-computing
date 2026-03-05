@@ -512,6 +512,7 @@ dependencies = [
     { name = "numba" },
     { name = "numpy" },
     { name = "scipy" },
+    { name = "tqdm" },
 ]
 
 [package.metadata]
@@ -522,6 +523,7 @@ requires-dist = [
     { name = "numba", specifier = ">=0.64.0" },
     { name = "numpy", specifier = ">=2.4.2" },
     { name = "scipy", specifier = ">=1.17.0" },
+    { name = "tqdm", specifier = ">=4.67.2" },
 ]
 
 [[package]]
