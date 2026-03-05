@@ -4,12 +4,13 @@ from numba.experimental import jitclass
 from numba import int64, float64
 
 spec = [
-    ('size_x', int64),
-    ('size_y', int64),
-    ('grid', int64[:, :]),
-    ('nu', float64),
-    ('c_history', float64[:, :, :])
+    ("size_x", int64),
+    ("size_y", int64),
+    ("grid", int64[:, :]),
+    ("nu", float64),
+    ("c_history", float64[:, :, :]),
 ]
+
 
 @jitclass(spec)
 class DLA:
@@ -20,13 +21,13 @@ class DLA:
         self.nu = nu
         np.random.seed(seed)
 
-        midpoint = int(math.ceil(size_x / 2)) 
+        midpoint = int(math.ceil(size_x / 2))
         self.grid[-1, midpoint] = 1
-        
+
     def SOR_Iteration(self, omega=1.9, epsilon=1e-5, max_iter=10000):
-        '''
+        """
         Find steady state using SOR method
-        '''
+        """
         c = np.zeros((self.size_y, self.size_x), dtype=np.float64)
         c[0, :] = 1.0
         c_new = np.copy(c)
@@ -37,24 +38,26 @@ class DLA:
                 for i in range(self.size_x):
                     if self.grid[j, i] == 1:
                         c[j, i] = 0.0
-            
+
             c_new[0, :] = 1.0
-            
+
             for j in range(1, self.size_y):
                 for i in range(self.size_x):
                     if self.grid[j, i] == 0:
-                        j_down = min(j+1, self.size_y-1)
-                        c_new[j, i] = (omega/4.0)*(c[j, (i+1) % self.size_x] 
-                                                 + c_new[j, (i-1) % self.size_x]  
-                                                 + c[j_down, i] 
-                                                 + c_new[j-1, i]) + (1.0-omega)*c[j, i]
+                        j_down = min(j + 1, self.size_y - 1)
+                        c_new[j, i] = (omega / 4.0) * (
+                            c[j, (i + 1) % self.size_x]
+                            + c_new[j, (i - 1) % self.size_x]
+                            + c[j_down, i]
+                            + c_new[j - 1, i]
+                        ) + (1.0 - omega) * c[j, i]
             it += 1
             delta = np.absolute(c_new - c)
             if np.max(delta) < epsilon:
                 return np.around(c_new, 2), it
             c = np.copy(c_new)
         return c_new, it
-    
+
     def neighbour_in_cluster(self, x: int, y: int) -> bool:
         width = self.size_x
         height = self.size_y
@@ -73,13 +76,13 @@ class DLA:
     def find_neighbors(self):
         neighbors = [(0, 0)]
         neighbors.pop()
-        
+
         for j in range(1, self.size_y):
             for i in range(self.size_x):
                 if self.grid[j, i] == 0 and self.neighbour_in_cluster(i, j):
                     neighbors.append((i, j))
         return neighbors
-    
+
     def one_growth_step(self):
         neighbors = self.find_neighbors()
         c, it = self.SOR_Iteration()
@@ -90,11 +93,11 @@ class DLA:
             # val = max(c[y, x], 1e-15)
             val = c[y, x]
             probs[idx] = self.nu * np.log(val)
-        
+
         probs -= np.max(probs)
         probs = np.exp(probs)
         probs /= np.sum(probs)
-        
+
         r = np.random.random()
         acc = 0.0
         random_index = 0
@@ -108,7 +111,7 @@ class DLA:
         self.grid[new_object[1], new_object[0]] = 1
 
         return c
-    
+
     def simulate_growth_model(self, steps: int):
         c_history = np.zeros((self.size_x, self.size_y, steps), dtype=np.float64)
         for t in range(steps):

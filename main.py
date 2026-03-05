@@ -34,7 +34,9 @@ def plot_2x2_grids(grids: np.ndarray, labels: list, filename: str, plot: bool = 
         ax.set_yticks([])
 
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
-    plt.savefig(PLOTS_DIR + filename + PLOTS_FORMAT, bbox_inches="tight", pad_inches=0.1)
+    plt.savefig(
+        PLOTS_DIR + filename + PLOTS_FORMAT, bbox_inches="tight", pad_inches=0.1
+    )
     plt.show() if plot else plt.close()
 
 
@@ -48,7 +50,9 @@ def plot_grid_overlap(grids: np.ndarray, filename: str, plot: bool = False):
     plt.colorbar(im, fraction=0.046, pad=0.04, label="Number of Simulations")
 
     plt.axis("off")
-    plt.savefig(PLOTS_DIR + filename + PLOTS_FORMAT, bbox_inches="tight", pad_inches=0.1)
+    plt.savefig(
+        PLOTS_DIR + filename + PLOTS_FORMAT, bbox_inches="tight", pad_inches=0.1
+    )
     plt.show() if plot else plt.close()
 
 
@@ -110,8 +114,11 @@ def plot_4x4_grids(
         ax.set_yticks([])
 
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
-    plt.savefig(PLOTS_DIR + filename + PLOTS_FORMAT, bbox_inches="tight", pad_inches=0.1)
+    plt.savefig(
+        PLOTS_DIR + filename + PLOTS_FORMAT, bbox_inches="tight", pad_inches=0.1
+    )
     plt.show() if plot else plt.close()
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -122,11 +129,7 @@ if __name__ == "__main__":
         action="store_true",
         help="Hide interactive plot windows and only save files.",
     )
-    parser.add_argument(
-        "--load",
-        action="store_true",
-        help="Load previous simulations"
-    )
+    parser.add_argument("--load", action="store_true", help="Load previous simulations")
     args = parser.parse_args()
 
     show_plots = not args.hide
@@ -162,7 +165,7 @@ if __name__ == "__main__":
                     model.simulate_growth_model(500)
                     results[seed_index, nu_index, :, :] = model.grid
                     pbar.update(1)
-    
+
     np.save(f"{DATA_DIR}DLA_results", results)
 
     grids = results[:, 3, :, :]
@@ -188,13 +191,14 @@ if __name__ == "__main__":
         with tqdm(total=total_dla_iters, desc="Running Simulations") as pbar:
             for seed_index, seed in enumerate(seeds):
                 for ps_index, ps_value in enumerate(ps_values):
-                    simulation = MCDLA(size_x=size_x, size_y=size_y, seed=seed, ps=ps_value)
+                    simulation = MCDLA(
+                        size_x=size_x, size_y=size_y, seed=seed, ps=ps_value
+                    )
                     simulation.simulate_agents(STEPS)
                     results[seed_index, ps_index, :, :] = simulation.grid
                     pbar.update(1)
-    
-    np.save(f"{DATA_DIR}MC_DLA_results", results)
 
+    np.save(f"{DATA_DIR}MC_DLA_results", results)
 
     grids = results[:, 3, :, :]
     plot_2x2_grids(grids=grids, labels=seed_labels, filename=f"MC_DLA_grid")
@@ -220,20 +224,24 @@ if __name__ == "__main__":
         plot=show_plots,
     )
     print("Running The Gray-Scott model - A reaction-diffusion system")
-    
+
     # Intervals
     N = 100
-    n_timesteps = 40000         
-    noise = 0.01            # +-1%
-    
+    n_timesteps = 40000
+    noise = 0.01  # +-1%
+
     # Get inital conditions for u and v
     u_init, v_init = GrayScott.initial_conditions(N, 0.5, 0.25, 10, 0.01)
-    
+
     # Define parameters to plot
-    args_set = [{"dt": 1, "dx": 1, "Du": 0.16, "Dv": 0.08, 'feed': 0.035, 'kill': 0.06},
-                {"dt": 1, "dx": 1, "Du": 0.16, "Dv": 0.08, 'feed': 0.05, 'kill': 0.065},
-                {"dt": 1, "dx": 1, "Du": 0.16, "Dv": 0.08, 'feed': 0.015, 'kill': 0.044},
-                {"dt": 1, "dx": 1, "Du": 0.16, "Dv": 0.08, 'feed': 0.04, 'kill': 0.065}]
-    
-    savefile = PLOTS_DIR + 'GrayScott' + PLOTS_FORMAT
-    GrayScott.plot_argsets(u_init, v_init, n_timesteps, args_set, savefile, show=show_plots)
+    args_set = [
+        {"dt": 1, "dx": 1, "Du": 0.16, "Dv": 0.08, "feed": 0.035, "kill": 0.06},
+        {"dt": 1, "dx": 1, "Du": 0.16, "Dv": 0.08, "feed": 0.05, "kill": 0.065},
+        {"dt": 1, "dx": 1, "Du": 0.16, "Dv": 0.08, "feed": 0.015, "kill": 0.044},
+        {"dt": 1, "dx": 1, "Du": 0.16, "Dv": 0.08, "feed": 0.04, "kill": 0.065},
+    ]
+
+    savefile = PLOTS_DIR + "GrayScott" + PLOTS_FORMAT
+    GrayScott.plot_argsets(
+        u_init, v_init, n_timesteps, args_set, savefile, show=show_plots
+    )
