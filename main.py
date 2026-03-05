@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 import argparse
-from MonteCarlo import DLA
+from MonteCarlo import MCDLA
 from GrayScott import GrayScott
 
 PLOTS_DIR = "plots/"
@@ -143,7 +143,7 @@ if __name__ == "__main__":
 
     for seed_index, seed in enumerate(seeds):
         for ps_index, ps_value in enumerate(ps_values):
-            simulation = DLA(size_x=size_x, size_y=size_y, seed=seed, ps=ps_value)
+            simulation = MCDLA(size_x=size_x, size_y=size_y, seed=seed, ps=ps_value)
             simulation.simulate_agents(N_AGENTS)
             results[seed_index, ps_index, :, :] = simulation.grid
 
