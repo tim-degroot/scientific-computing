@@ -8,6 +8,7 @@ from GrayScott import GrayScott
 from DLA import DLA
 
 PLOTS_DIR = "plots/"
+DATA_DIR = "data/"
 PLOTS_FORMAT = ".pdf"
 
 
@@ -121,12 +122,21 @@ if __name__ == "__main__":
         action="store_true",
         help="Hide interactive plot windows and only save files.",
     )
+    parser.add_argument(
+        "--load",
+        action="store_true",
+        help="Load previous simulations"
+    )
     args = parser.parse_args()
 
     show_plots = not args.hide
+    load_data = args.load
 
     if "/" in PLOTS_DIR or "\\" in PLOTS_DIR:
         os.makedirs(os.path.dirname(PLOTS_DIR), exist_ok=True)
+
+    if "/" in DATA_DIR or "\\" in DATA_DIR:
+        os.makedirs(os.path.dirname(DATA_DIR), exist_ok=True)
 
     STEPS = 500
     size_x, size_y = (100, 100)
@@ -141,14 +151,19 @@ if __name__ == "__main__":
     print("Running Diffusion Limited Aggregation")
     results = np.zeros((len(seeds), len(nu_values), size_x, size_y))
 
-    total_dla_iters = len(seeds) * len(nu_values)
-    with tqdm(total=total_dla_iters, desc="Running Simulations") as pbar:
-        for seed_index, seed in enumerate(seeds):
-            for nu_index, nu_value in enumerate(nu_values):
-                model = DLA(size_x=size_x, size_y=size_y, nu=nu_value, seed=seed)
-                model.simulate_growth_model(500)
-                results[seed_index, nu_index, :, :] = model.grid
-                pbar.update(1)
+    if load_data:
+        results = np.load(f"{DATA_DIR}DLA_results.npy")
+    else:
+        total_dla_iters = len(seeds) * len(nu_values)
+        with tqdm(total=total_dla_iters, desc="Running Simulations") as pbar:
+            for seed_index, seed in enumerate(seeds):
+                for nu_index, nu_value in enumerate(nu_values):
+                    model = DLA(size_x=size_x, size_y=size_y, nu=nu_value, seed=seed)
+                    model.simulate_growth_model(500)
+                    results[seed_index, nu_index, :, :] = model.grid
+                    pbar.update(1)
+    
+    np.save(f"{DATA_DIR}DLA_results", results)
 
     grids = results[:, 3, :, :]
     plot_2x2_grids(grids=grids, labels=seed_labels, filename=f"DLA_grid")
@@ -166,14 +181,20 @@ if __name__ == "__main__":
     print("Running Monte Carlo simulation of DLA")
     results = np.zeros((len(seeds), len(ps_values), size_x, size_y))
 
-    total_dla_iters = len(seeds) * len(ps_values)
-    with tqdm(total=total_dla_iters, desc="Running Simulations") as pbar:
-        for seed_index, seed in enumerate(seeds):
-            for ps_index, ps_value in enumerate(ps_values):
-                simulation = MCDLA(size_x=size_x, size_y=size_y, seed=seed, ps=ps_value)
-                simulation.simulate_agents(STEPS)
-                results[seed_index, ps_index, :, :] = simulation.grid
-                pbar.update(1)
+    if load_data:
+        results = np.load(f"{DATA_DIR}MC_DLA_results.npy")
+    else:
+        total_dla_iters = len(seeds) * len(ps_values)
+        with tqdm(total=total_dla_iters, desc="Running Simulations") as pbar:
+            for seed_index, seed in enumerate(seeds):
+                for ps_index, ps_value in enumerate(ps_values):
+                    simulation = MCDLA(size_x=size_x, size_y=size_y, seed=seed, ps=ps_value)
+                    simulation.simulate_agents(STEPS)
+                    results[seed_index, ps_index, :, :] = simulation.grid
+                    pbar.update(1)
+    
+    np.save(f"{DATA_DIR}MC_DLA_results", results)
+
 
     grids = results[:, 3, :, :]
     plot_2x2_grids(grids=grids, labels=seed_labels, filename=f"MC_DLA_grid")
@@ -215,4 +236,4 @@ if __name__ == "__main__":
                 {"dt": 1, "dx": 1, "Du": 0.16, "Dv": 0.08, 'feed': 0.04, 'kill': 0.065}]
     
     savefile = PLOTS_DIR + 'GrayScott' + PLOTS_FORMAT
-    GrayScott.plot_argsets(u_init, v_init, n_timesteps, args_set, savefile)
+    GrayScott.plot_argsets(u_init, v_init, n_timesteps, args_set, savefile, show=show_plots)
