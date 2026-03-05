@@ -89,7 +89,6 @@ def plot_4x4_grids(
     grids: np.ndarray, xlabels: list, ylabels: list, filename: str, plot: bool = False
 ):
     fig, axes = plt.subplots(4, 4, figsize=(8, 8), sharex=True, sharey=True)
-    flat_grids = grids.reshape(16, grids.shape[-2], grids.shape[-1])
     flat_axes = axes.flatten()
 
     for i in range(16):
@@ -97,7 +96,7 @@ def plot_4x4_grids(
         row = i // 4
         col = i % 4
 
-        ax.imshow(flat_grids[i], cmap="binary", aspect="equal")
+        ax.imshow(grids[col, row], cmap="binary", aspect="equal")
 
         if col == 0:
             ax.set_ylabel(ylabels[row])
@@ -112,7 +111,6 @@ def plot_4x4_grids(
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
     plt.savefig(PLOTS_DIR + filename + PLOTS_FORMAT, bbox_inches="tight", pad_inches=0.1)
     plt.show() if plot else plt.close()
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -130,11 +128,11 @@ if __name__ == "__main__":
     if "/" in PLOTS_DIR or "\\" in PLOTS_DIR:
         os.makedirs(os.path.dirname(PLOTS_DIR), exist_ok=True)
 
+    STEPS = 500
     size_x, size_y = (100, 100)
     seeds = [5, 8, 13, 21]
     nu_values = np.arange(0.0, 2.0, step=0.5)
-    nu_values = [1.0]
-    nu_labels = [rf"$\nu={nu_value:.2f}$" for nu_value in nu_values]
+    nu_labels = [rf"$\eta={nu_value:.2f}$" for nu_value in nu_values]
 
     seed_labels = [rf"seed = {seed:.0f}" for seed in seeds]
     ps_values = [0.25, 0.50, 0.75, 1.00]
@@ -152,8 +150,7 @@ if __name__ == "__main__":
                 results[seed_index, nu_index, :, :] = model.grid
                 pbar.update(1)
 
-    # grids = results[:, 3, :, :]
-    grids = results[:, 0, :, :]
+    grids = results[:, 3, :, :]
     plot_2x2_grids(grids=grids, labels=seed_labels, filename=f"DLA_grid")
 
     plot_4x4_grids(
@@ -167,8 +164,6 @@ if __name__ == "__main__":
     # exit()
 
     print("Running Monte Carlo simulation of DLA")
-    N_AGENTS = 500
-
     results = np.zeros((len(seeds), len(ps_values), size_x, size_y))
 
     total_dla_iters = len(seeds) * len(ps_values)
@@ -176,8 +171,9 @@ if __name__ == "__main__":
         for seed_index, seed in enumerate(seeds):
             for ps_index, ps_value in enumerate(ps_values):
                 simulation = MCDLA(size_x=size_x, size_y=size_y, seed=seed, ps=ps_value)
-                simulation.simulate_agents(N_AGENTS)
+                simulation.simulate_agents(STEPS)
                 results[seed_index, ps_index, :, :] = simulation.grid
+                pbar.update(1)
 
     grids = results[:, 3, :, :]
     plot_2x2_grids(grids=grids, labels=seed_labels, filename=f"MC_DLA_grid")
