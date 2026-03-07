@@ -91,7 +91,7 @@ def plot_2x2_overlap(
 
 
 def plot_4x4_grids(
-    grids: np.ndarray, xlabels: list, ylabels: list, filename: str, plot: bool = False
+    grids: np.ndarray | np.ma.MaskedArray, xlabels: list, ylabels: list, filename: str, plot: bool = False, show_diffusion: bool = False
 ):
     fig, axes = plt.subplots(4, 4, figsize=(8, 8), sharex=True, sharey=True)
     flat_axes = axes.flatten()
@@ -101,7 +101,11 @@ def plot_4x4_grids(
         row = i // 4
         col = i % 4
 
-        ax.imshow(grids[col, row], cmap="binary", aspect="equal")
+        cmap_name = "plasma" if show_diffusion else "binary"
+        cmap = plt.colormaps.get_cmap(cmap_name).copy()
+        cmap.set_bad(color="white")
+
+        heatmap = ax.imshow(grids[col, row], cmap=cmap, aspect="equal")
 
         if col == 0:
             ax.set_ylabel(ylabels[row])
@@ -113,6 +117,14 @@ def plot_4x4_grids(
         ax.set_xticks([])
         ax.set_yticks([])
 
+    # if show_diffusion:
+        # # Make room for colorbar
+        # plt.subplots_adjust(right=0.85)
+
+        # # Add colorbar
+        # cbar_ax = fig.add_axes([0.875, 0.15, 0.03, 0.7])
+        # fig.colorbar(heatmap, ax=axes.ravel().tolist(), aspect=20, cax=cbar_ax)
+    
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
     plt.savefig(
         PLOTS_DIR + filename + PLOTS_FORMAT, bbox_inches="tight", pad_inches=0.1
@@ -144,29 +156,36 @@ if __name__ == "__main__":
     STEPS = 500
     size_x, size_y = (100, 100)
     seeds = [5, 8, 13, 21]
-    nu_values = np.arange(0.0, 2.0, step=0.5)
-    nu_labels = [rf"$\eta={nu_value:.2f}$" for nu_value in nu_values]
+    eta_values = np.arange(0.0, 2.0, step=0.5)
+    eta_labels = [rf"$\eta={eta_value:.2f}$" for eta_value in eta_values]
 
     seed_labels = [rf"seed = {seed:.0f}" for seed in seeds]
     ps_values = [0.25, 0.50, 0.75, 1.00]
     ps_labels = [rf"$p_s={ps_value:.2f}$" for ps_value in ps_values]
 
     print("Running Diffusion Limited Aggregation")
-    results = np.zeros((len(seeds), len(nu_values), size_x, size_y))
+    results = np.zeros((len(seeds), len(eta_values), size_x, size_y))
+    results_diff = np.zeros((len(seeds), len(eta_values), size_x, size_y))
 
     if load_data:
         results = np.load(f"{DATA_DIR}DLA_results.npy")
+        results_diff = np.load(f"{DATA_DIR}DLA_w_diffusion_results.npy")
     else:
-        total_dla_iters = len(seeds) * len(nu_values)
+        total_dla_iters = len(seeds) * len(eta_values)
         with tqdm(total=total_dla_iters, desc="Running Simulations") as pbar:
             for seed_index, seed in enumerate(seeds):
-                for nu_index, nu_value in enumerate(nu_values):
-                    model = DLA(size_x=size_x, size_y=size_y, nu=nu_value, seed=seed)
-                    model.simulate_growth_model(500)
-                    results[seed_index, nu_index, :, :] = model.grid
+                for eta_index, eta_value in enumerate(eta_values):
+                    model = DLA(size_x=size_x, size_y=size_y, eta=eta_value, seed=seed)
+                    c_history = model.simulate_growth_model(500)
+                    c_final = c_history[:, :, -1]
+                    grid_diff = np.ma.masked_array(c_final[1:-1, :], mask=model.grid)
+
+                    results[seed_index, eta_index, :, :] = model.grid
+                    results_diff[seed_index, eta_index, : :] = grid_diff
                     pbar.update(1)
 
     np.save(f"{DATA_DIR}DLA_results", results)
+    np.save(f"{DATA_DIR}DLA_w_diffusion_results", results_diff)
 
     grids = results[:, 3, :, :]
     plot_2x2_grids(grids=grids, labels=seed_labels, filename=f"DLA_grid")
@@ -174,8 +193,24 @@ if __name__ == "__main__":
     plot_4x4_grids(
         grids=results,
         xlabels=seed_labels,
-        ylabels=nu_labels,
+        ylabels=eta_labels,
         filename="DLA_matrix",
+        plot=False,
+    )
+
+    plot_4x4_grids(
+        grids=results_diff,
+        xlabels=seed_labels,
+        ylabels=eta_labels,
+        filename="DLA_matrix_w_diffusion",
+        plot=show_plots,
+        show_diffusion=True,
+    )
+
+    plot_2x2_overlap(
+        grid_groups=np.transpose(results, (1, 0, 2, 3)),
+        labels=eta_labels,
+        filename="DLA_seed_overlap",
         plot=show_plots,
     )
 
