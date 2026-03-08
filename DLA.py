@@ -14,17 +14,18 @@ spec = [
 
 @jitclass(spec)
 class DLA:
-    def __init__(self, size_x: int, size_y: int, eta: float, seed: int):
+    def __init__(self, size_x: int, size_y: int, eta: float, omega: float, seed: int):
         self.size_x = size_x
         self.size_y = size_y
         self.grid = np.zeros((size_y+2, size_x), dtype=np.int64)
         self.eta = eta
+        self.omega = omega
         np.random.seed(seed)
 
         midpoint = int(math.ceil(size_x / 2))
         self.grid[-2, midpoint] = 1
 
-    def SOR_Iteration(self, omega=1.9, epsilon=1e-5, max_iter=10000):
+    def SOR_Iteration(self, epsilon=1e-5, max_iter=10000):
         """
         Find steady state using SOR method
         """
@@ -47,12 +48,12 @@ class DLA:
                 for i in range(self.size_x):
                     if self.grid[j, i] == 0:
                         # j_down = min(j + 1, self.size_y - 1)
-                        c_new[j, i] = (omega / 4.0) * (
+                        c_new[j, i] = (self.omega / 4.0) * (
                             c[j, (i + 1) % self.size_x]
                             + c_new[j, (i - 1) % self.size_x]
                             + c[j+1, i]
                             + c_new[j - 1, i]
-                        ) + (1.0 - omega) * c[j, i]
+                        ) + (1.0 - self.omega) * c[j, i]
             it += 1
             delta = np.absolute(c_new - c)
             if np.max(delta) < epsilon:

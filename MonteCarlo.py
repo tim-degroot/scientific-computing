@@ -7,7 +7,7 @@ spec = [("grid", int64[:, :]), ("ps", float64)]
 
 
 @jitclass(spec)
-class DLA:
+class MCDLA:
     """
     Diffusion-Limited Aggregation (DLA) simulation.
 

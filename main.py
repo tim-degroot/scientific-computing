@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import os
 from tqdm import tqdm
 import argparse
-from MonteCarlo import DLA as MCDLA
+from MonteCarlo import MCDLA
 from GrayScott import GrayScott
 from DLA import DLA
 
@@ -91,7 +91,7 @@ def plot_2x2_overlap(
 
 
 def plot_4x4_grids(
-    grids: np.ndarray | np.ma.MaskedArray, xlabels: list, ylabels: list, filename: str, plot: bool = False, show_diffusion: bool = False
+    grids: np.ndarray, xlabels: list, ylabels: list, filename: str, plot: bool = False,
 ):
     fig, axes = plt.subplots(4, 4, figsize=(8, 8), sharex=True, sharey=True)
     flat_axes = axes.flatten()
@@ -101,11 +101,7 @@ def plot_4x4_grids(
         row = i // 4
         col = i % 4
 
-        cmap_name = "plasma" if show_diffusion else "binary"
-        cmap = plt.colormaps.get_cmap(cmap_name).copy()
-        cmap.set_bad(color="white")
-
-        heatmap = ax.imshow(grids[col, row], cmap=cmap, aspect="equal")
+        ax.imshow(grids[col, row], cmap="binary", aspect="equal")
 
         if col == 0:
             ax.set_ylabel(ylabels[row])
@@ -116,14 +112,6 @@ def plot_4x4_grids(
 
         ax.set_xticks([])
         ax.set_yticks([])
-
-    # if show_diffusion:
-        # # Make room for colorbar
-        # plt.subplots_adjust(right=0.85)
-
-        # # Add colorbar
-        # cbar_ax = fig.add_axes([0.875, 0.15, 0.03, 0.7])
-        # fig.colorbar(heatmap, ax=axes.ravel().tolist(), aspect=20, cax=cbar_ax)
     
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
     plt.savefig(
@@ -165,46 +153,31 @@ if __name__ == "__main__":
 
     print("Running Diffusion Limited Aggregation")
     results = np.zeros((len(seeds), len(eta_values), size_x, size_y))
-    results_diff = np.zeros((len(seeds), len(eta_values), size_x, size_y))
 
     if load_data:
         results = np.load(f"{DATA_DIR}DLA_results.npy")
-        results_diff = np.load(f"{DATA_DIR}DLA_w_diffusion_results.npy")
     else:
         total_dla_iters = len(seeds) * len(eta_values)
         with tqdm(total=total_dla_iters, desc="Running Simulations") as pbar:
             for seed_index, seed in enumerate(seeds):
                 for eta_index, eta_value in enumerate(eta_values):
-                    model = DLA(size_x=size_x, size_y=size_y, eta=eta_value, seed=seed)
-                    c_history = model.simulate_growth_model(500)
-                    c_final = c_history[:, :, -1]
-                    grid_diff = np.ma.masked_array(c_final[1:-1, :], mask=model.grid)
+                    model = DLA(size_x=size_x, size_y=size_y, eta=eta_value, omega=1.9, seed=seed)
+                    model.simulate_growth_model(500)
 
                     results[seed_index, eta_index, :, :] = model.grid
-                    results_diff[seed_index, eta_index, : :] = grid_diff
                     pbar.update(1)
 
     np.save(f"{DATA_DIR}DLA_results", results)
-    np.save(f"{DATA_DIR}DLA_w_diffusion_results", results_diff)
 
-    grids = results[:, 3, :, :]
-    plot_2x2_grids(grids=grids, labels=seed_labels, filename=f"DLA_grid")
+    grids = results[:, 2, :, :]
+    plot_2x2_grids(grids=grids, labels=seed_labels, filename=f"DLA_grid", plot=True)
 
     plot_4x4_grids(
         grids=results,
         xlabels=seed_labels,
         ylabels=eta_labels,
         filename="DLA_matrix",
-        plot=False,
-    )
-
-    plot_4x4_grids(
-        grids=results_diff,
-        xlabels=seed_labels,
-        ylabels=eta_labels,
-        filename="DLA_matrix_w_diffusion",
         plot=show_plots,
-        show_diffusion=True,
     )
 
     plot_2x2_overlap(
