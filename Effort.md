@@ -10,16 +10,16 @@ Luca was primarily responsible for Diffusion Limited Aggregation. Tim was primar
 
 ## Git fame distribution of the repository
 
-Date and time: 03-03-2026 T 17:43
+Date and time: 08-03-2026 T 19:36
 
 ```bash
-Total commits: 49
-Total ctimes: 225
-Total files: 10
-Total loc: 1079
+Total commits: 63
+Total ctimes: 369
+Total files: 15
+Total loc: 1339
 | Author      |   loc |   coms |   fils |  distribution   |
 |:------------|------:|-------:|-------:|:----------------|
-| tim-degroot |   994 |     34 |      9 | 92.1/69.4/90.0  |
-| Loghserk    |    85 |      9 |      1 | 7.9/18.4/10.0   |
-| lnca-dotcom |     0 |      6 |      0 | 0.0/12.2/ 0.0   |
+| tim-degroot |  1182 |     42 |     10 | 88.3/66.7/66.7  |
+| lnca-dotcom |    96 |     11 |      3 | 7.2/17.5/20.0   |
+| Loghserk    |    61 |     10 |      2 | 4.6/15.9/13.3   |
 ```

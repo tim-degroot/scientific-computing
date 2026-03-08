@@ -45,7 +45,9 @@ All figures are automatically generated and saved in the `/plots/` directory. Fi
 
 Location: `/plots/`
 
-- `MC_DLA_grid.png`: 2x2 grid showing final DLA states for different random seeds.
-- `MC_DLA_matrix.png`:4x4 matrix exploring the parameter space of $p_s$ vs. seeds.
-- `MC_DLA_ps_overlap.png`: Heatmap showing simulation overlap grouped by $p_s$.
-- `MC_DLA_seed_overlap.png`: Heatmap showing simulation overlap grouped by random seed.
+- `DLA_grid.pdf`: 2x2 grid showing final DLA states for different random seeds for DLA.
+- `DLA_matrix.pdf` 4x4 matrix exploring the parameter space of $p_s$ vs. seeds for DLA.
+- `MC_DLA_grid.pdf`: 2x2 grid showing final DLA states for different random seeds for Monte Carlo DLA.
+- `MC_DLA_matrix.pdf`: 4x4 matrix exploring the parameter space of $p_s$ vs. seeds for Monte Carlo DLA.
+- `MC_DLA_ps_overlap.pdf`: Heatmap showing simulation overlap grouped by $p_s$ for Monte Carlo DLA.
+- `MC_DLA_seed_overlap.pdf`: Heatmap showing simulation overlap grouped by random seed for Monte Carlo DLA.
