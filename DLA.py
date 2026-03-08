@@ -8,6 +8,7 @@ spec = [
     ("size_y", int64),
     ("grid", int64[:, :]),
     ("eta", float64),
+    ("omega", float64),
     ("c_history", float64[:, :, :]),
 ]
 
