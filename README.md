@@ -33,7 +33,7 @@ Alternatively, you can use `uv sync` to manually update the environment in `.ven
 - `main.py`: The entry point. Handles simulation loops, parameter configuration, and plotting output. 
     - Usage: `uv run main.py [--hide]
     - The `--hide` flag suppresses interactive plot windows for faster output generation.
-- `MonteCarlo.py`: Contains the implementation of the Monte Carlo DLA in the `DLA` class.
+- `MonteCarlo.py`: Contains the implementation of the Monte Carlo DLA in the `MCDLA` class.
 - `GrayScott.py`: Contains the implementation of the Gray-Scott model in the `GrayScott` class.
 - `pyproject.toml`: Defines the project dependencies and Python version.
 
@@ -45,7 +45,10 @@ All figures are automatically generated and saved in the `/plots/` directory. Fi
 
 Location: `/plots/`
 
-- `MC_DLA_grid.png`: 2x2 grid showing final DLA states for different random seeds.
-- `MC_DLA_matrix.png`:4x4 matrix exploring the parameter space of $p_s$ vs. seeds.
-- `MC_DLA_ps_overlap.png`: Heatmap showing simulation overlap grouped by $p_s$.
-- `MC_DLA_seed_overlap.png`: Heatmap showing simulation overlap grouped by random seed.
+- `DLA_grid.pdf`: 2x2 grid showing final DLA states for different random seeds.
+- `DLA_matrix.pdf`: 4x4 matrix exploring the effect of $\eta$ vs. seeds.
+- `DLA_seed_overlap.pdf`: Heatmap showing simulation overlap grouped by random seed.
+- `MC_DLA_grid.pdf`: 2x2 grid showing final Monte Carlo DLA states for different random seeds.
+- `MC_DLA_matrix.pdf`:4x4 matrix exploring the parameter space of $p_s$ vs. seeds.
+- `MC_DLA_ps_overlap.pdf`: Heatmap showing simulation overlap grouped by $p_s$.
+- `MC_DLA_seed_overlap.pdf`: Heatmap showing simulation overlap grouped by random seed.
