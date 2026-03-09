@@ -7,4 +7,5 @@
 *.pyc
 __pycache__
 *.pdf
-.npy
+*.npy
+*.zip
