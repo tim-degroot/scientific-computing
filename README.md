@@ -31,7 +31,7 @@ Alternatively, you can use `uv sync` to manually update the environment in `.ven
 ## Project Structure
 
 - `main.py`: The entry point. Handles simulation loops, parameter configuration, and plotting output. 
-    - Usage: `uv run main.py [--hide]
+    - Usage: `uv run main.py [--hide]`
     - The `--hide` flag suppresses interactive plot windows for faster output generation.
 - `DLA.py`: Contains the implementation of the Diffusion-Limited Aggregation in the `DLA` class.
 - `MonteCarlo.py`: Contains the implementation of the Monte Carlo DLA in the `MCDLA` class.
