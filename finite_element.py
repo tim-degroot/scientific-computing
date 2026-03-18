@@ -1,5 +1,5 @@
 from ngsolve import *
-from netgen.geom2d import SplineGeometry
+from netgen.occ import *
 
 # viscosity
 nu = 0.00115
@@ -8,17 +8,18 @@ nu = 0.00115
 tau = 0.001
 tend = 10
 
+# Add specified Karman vortex
+shape = Rectangle(2,0.41).Circle(0.2,0.2,0.05).Reverse().Face()
+shape.edges.name="wall"
+shape.edges.Min(X).name="inlet"
+shape.edges.Max(X).name="outlet"
 
-geo = SplineGeometry()
-geo.AddRectangle( (0, 0), (2.2, 0.32), bcs = ("wall", "outlet", "wall", "inlet"))
-geo.AddCircle ( (0.155, 0.155), r=0.05, leftdomain=0, rightdomain=1, bc="cyl", maxh=0.02)
-mesh = Mesh( geo.GenerateMesh(maxh=0.07))
+mesh = Mesh(OCCGeometry(shape, dim=2).GenerateMesh(maxh=0.07)).Curve(3)
+Draw (mesh);
 
-mesh.Curve(3)
 
 V = VectorH1(mesh,order=3, dirichlet="wall|cyl|inlet")
 Q = H1(mesh,order=2)
-
 X = V*Q
 
 u,p = X.TrialFunction()
