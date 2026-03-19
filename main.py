@@ -12,54 +12,6 @@ DATA_DIR = "data/"
 PLOTS_FORMAT = ".pdf"
 
 
-# Benchmarking function
-def benchmark_lbm(grid_sizes, num_steps=500, num_runs=5):
-    """Benchmark LBM execution time for different grid sizes."""
-    times = []
-    ci_intervals = []
-    for size in grid_sizes:
-        run_times = []
-        for _ in range(num_runs):
-            lbm = D2Q9LBM(resolution=size, tau=0.6, u_inlet=0.1)
-            start_time = time.time()
-            for _ in range(num_steps):
-                lbm.step()
-            run_times.append(time.time() - start_time)
-        avg_time = np.mean(run_times)
-        times.append(avg_time)
-
-        # Calculate 95% confidence interval
-        confidence = 0.95
-        n = len(run_times)
-        h = sem(run_times) * t.ppf((1 + confidence) / 2, n - 1)
-        ci_intervals.append(h)
-
-    return times, ci_intervals
-
-
-# Plotting function
-def plot_benchmark(grid_sizes, results):
-    """Plot benchmark results for multiple methods with confidence intervals."""
-    plt.figure(figsize=(10, 6))
-    for label, data in results.items():
-        times, ci_intervals = data
-        plt.errorbar(
-            grid_sizes,
-            times,
-            yerr=ci_intervals,
-            label=label,
-            marker="o",
-            linestyle="",
-            capsize=5,
-        )
-    plt.xlabel("Grid Size (NxN)")
-    plt.ylabel("Average Execution Time (s)")
-    plt.title("Execution Time vs Grid Size with 95% Confidence Intervals")
-    plt.legend()
-    plt.grid(True)
-    plt.show()
-
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Run Scientific Computing Set 3 simulations."
@@ -85,26 +37,3 @@ if __name__ == "__main__":
     else:
         print("Showing animation to demonstrate functionality...")
         lbm.run_animation(steps=100, interval=100)
-
-    # Benchmarking for different resolutions
-    print("Running benchmarking tests...")
-    resolutions = [0.02, 0.01, 0.005]  # Different resolutions in meters per grid point
-    for resolution in resolutions:
-        print(f"Benchmarking for resolution: {resolution} m/grid point")
-        # Enclose resolution in a list so the benchmarking function iterates properly
-        lbm_times, lbm_ci = benchmark_lbm([resolution])
-        print(
-            f"Resolution {resolution} m/grid point: Average execution times for LBM: {lbm_times}"
-        )
-
-    # Numerical stability analysis
-    print("Analyzing stability numerically...")
-    re_range = range(10, 500, 10)
-    stability_results = analyze_stability(
-        re_range, resolution=0.01, tau=0.6, u_inlet=0.1, num_steps=500
-    )
-    for re, metrics in stability_results.items():
-        if "error" in metrics:
-            print(f"Re={re}: Unstable - {metrics['error']}")
-        else:
-            print(f"Re={re}: Stable")
