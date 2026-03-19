@@ -20,7 +20,7 @@ def benchmark_lbm(grid_sizes, num_steps=500, num_runs=5):
     for size in grid_sizes:
         run_times = []
         for _ in range(num_runs):
-            lbm = D2Q9LBM(nx=size, ny=size, tau=0.6, u_inlet=0.1)
+            lbm = D2Q9LBM(resolution=size, tau=0.6, u_inlet=0.1)
             start_time = time.time()
             for _ in range(num_steps):
                 lbm.step()
@@ -51,17 +51,19 @@ def plot_benchmark(grid_sizes, results):
     plt.show()
 
 # Stability analysis function
-def analyze_stability(re_range, nx, ny, tau, u_inlet, num_steps):
+def analyze_stability(re_range, resolution, tau, u_inlet, num_steps):
     """Numerically analyze stability over a range of Reynolds numbers."""
     stability_results = {}
     for re in re_range:
         try:
-            lbm = D2Q9LBM(nx=nx, ny=ny, tau=tau, u_inlet=u_inlet)
+            lbm = D2Q9LBM(resolution=resolution, tau=tau, u_inlet=u_inlet)
             max_rho, min_rho = 0, float('inf')
             max_u, max_v = 0, 0
 
-            for _ in range(num_steps):
+            for step in range(num_steps):
                 lbm.step()
+                if step % 10 == 0:
+                    lbm.visualize(step)  # Visualize every 10 steps
                 max_rho = max(max_rho, np.max(lbm.rho))
                 min_rho = min(min_rho, np.min(lbm.rho))
                 max_u = max(max_u, np.max(np.abs(lbm.u)))
@@ -86,11 +88,9 @@ if __name__ == "__main__":
     parser.add_argument(
         "--hide",
         action="store_true",
-        help="Hide interactive plot windows and only save files.",
+        help="Hide the animation and only run the simulation in the background.",
     )
     args = parser.parse_args()
-
-    show_plots = not args.hide
 
     if "/" in PLOTS_DIR or "\\" in PLOTS_DIR:
         os.makedirs(os.path.dirname(PLOTS_DIR), exist_ok=True)
@@ -98,29 +98,33 @@ if __name__ == "__main__":
     if "/" in DATA_DIR or "\\" in DATA_DIR:
         os.makedirs(os.path.dirname(DATA_DIR), exist_ok=True)
 
-    print("Testing Lattice Boltzmann")
-    # Test correctness
-    print("Testing correctness...")
-    lbm = D2Q9LBM(nx=100, ny=50, tau=0.6, u_inlet=0.1)
-    for _ in range(1000):
-        lbm.step()
-    print("Correctness test completed.")
+    print("Running LBM simulation...")
+    lbm = D2Q9LBM(resolution=0.01, tau=0.6, u_inlet=0.2)
+
+    if args.hide:
+        print("Running simulation without animation...")
+        for _ in range(1000):
+            lbm.step()
+        print("Simulation completed.")
+    else:
+        print("Showing animation to demonstrate functionality...")
+        lbm.run_animation(steps=100, interval=100)
+
+    # Benchmarking for different resolutions
+    print("Running benchmarking tests...")
+    resolutions = [0.02, 0.01, 0.005]  # Different resolutions in meters per grid point
+    for resolution in resolutions:
+        print(f"Benchmarking for resolution: {resolution} m/grid point")
+        # Enclose resolution in a list so the benchmarking function iterates properly
+        lbm_times, lbm_ci = benchmark_lbm([resolution]) 
+        print(f"Resolution {resolution} m/grid point: Average execution times for LBM: {lbm_times}")
 
     # Numerical stability analysis
     print("Analyzing stability numerically...")
     re_range = range(10, 500, 10)
-    stability_results = analyze_stability(re_range, nx=100, ny=50, tau=0.6, u_inlet=0.1, num_steps=500)
+    stability_results = analyze_stability(re_range, resolution=0.01, tau=0.6, u_inlet=0.1, num_steps=500)
     for re, metrics in stability_results.items():
         if "error" in metrics:
             print(f"Re={re}: Unstable - {metrics['error']}")
         else:
-            print(f"Re={re}: max_rho={metrics['max_rho']:.2f}, min_rho={metrics['min_rho']:.2f}, max_u={metrics['max_u']:.2f}, max_v={metrics['max_v']:.2f}")
-
-    # Benchmarking
-    grid_sizes = [50, 100, 150, 200]
-    lbm_times, lbm_ci = benchmark_lbm(grid_sizes)
-    print(f"Average execution times for LBM: {lbm_times}")
-
-    # Plotting
-    results = {"LBM": (lbm_times, lbm_ci)}
-    plot_benchmark(grid_sizes, results)
+            print(f"Re={re}: Stable")
