@@ -27,6 +27,7 @@ if __name__ == "__main__":
     print("I.3 Lattice Boltzmann Method")
 
     experiments = [
+        {"resolution": 0.01, "tau": 0.6, "u_inlet": 0.133},  # Re = 60.0, Ma = 0.35
         # 1. High Mach Test: Original run with high velocity. 
         # Risk of compressibility errors, but good for seeing early symmetry.
         {"resolution": 0.01, "tau": 0.6, "u_inlet": 0.2},  # Re = 60.0, Ma = 0.35
@@ -45,7 +46,7 @@ if __name__ == "__main__":
         {"resolution": 0.003, "tau": 0.512, "u_inlet": 0.06},
     ]
 
-    for i, params in enumerate(experiments[4:]):
+    for i, params in enumerate(experiments[:]):
         resolution, tau, u_inlet = params.values()
         print(f"\nRunning experiment {i+1} with tau={tau}, u_inlet={u_inlet}")
 
