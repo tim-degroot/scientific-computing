@@ -247,16 +247,16 @@ class D2Q9LBM:
 
         # Bottom Left: Lift (Accuracy/Shedding)
         axs[1, 0].plot(self.lift_history, color="tab:orange")
-        axs[1, 0].set_title(r"Lift Coefficient ($C_L$)")
+        axs[1, 0].set_title(r"Lift Force ($F_L$)")
         axs[1, 0].set_xlabel("Time Step")
-        axs[1, 0].set_ylabel(r"$C_L$")
+        axs[1, 0].set_ylabel(r"$F_L$ (lu)")
         axs[1, 0].grid(True, alpha=0.3)
 
         # Bottom Right: Drag (Stability)
         axs[1, 1].plot(self.drag_history, color="tab:green")
-        axs[1, 1].set_title(r"Drag Coefficient ($C_D$)")
+        axs[1, 1].set_title(r"Drag Force ($F_D$)")
         axs[1, 1].set_xlabel("Time Step")
-        axs[1, 1].set_ylabel(r"$C_D$")
+        axs[1, 1].set_ylabel(r"$F_D$ (lu)")
         axs[1, 1].grid(True, alpha=0.3)
         plt.tight_layout()
         if save_path:
