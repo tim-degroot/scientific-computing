@@ -6,11 +6,16 @@
 
 ## Brief description of work distribution (max. 200 words)
 
-Luca was primarily responsible for Diffusion Limited Aggregation. Tim was primarily responsible for Monte Carlo simulation of DLA. Theyn was primarily responsible for The Gray-Scott model.
+The numerical methods for Kármán vortex streets were distributes as follows: 
+
+1. finite difference: Luca
+2. finite elements (ngsolve): Theyn
+3. lattice Boltzmann: Tim
 
 ## Git fame distribution of the repository
 
 Date and time: 08-03-2026 T 19:36
 
 ```bash
+
 ```
