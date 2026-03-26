@@ -15,15 +15,26 @@ class D2Q9LBM:
         # Calculate grid size based on resolution
         self.nx = int(domain_width / resolution)
         self.ny = int(domain_height / resolution)
-        self.tau = max(0.51, tau)  
+        self.tau = max(0.51, tau)
         self.u_inlet = u_inlet
 
         # D2Q9 Lattice weights and directional velocities
-        self.w = np.array([4 / 9, 1 / 9, 1 / 9, 1 / 9, 1 / 9, 1 / 36, 1 / 36, 1 / 36, 1 / 36])
-        self.c = np.array([
-            [0, 0], [1, 0], [0, 1], [-1, 0], [0, -1],
-            [1, 1], [-1, 1], [-1, -1], [1, -1],
-        ])
+        self.w = np.array(
+            [4 / 9, 1 / 9, 1 / 9, 1 / 9, 1 / 9, 1 / 36, 1 / 36, 1 / 36, 1 / 36]
+        )
+        self.c = np.array(
+            [
+                [0, 0],
+                [1, 0],
+                [0, 1],
+                [-1, 0],
+                [0, -1],
+                [1, 1],
+                [-1, 1],
+                [-1, -1],
+                [1, -1],
+            ]
+        )
 
         # Reverse indices for bounce-back boundaries
         self.opposite = np.array([0, 3, 4, 1, 2, 7, 8, 5, 6])
@@ -63,17 +74,21 @@ class D2Q9LBM:
         u2 = u**2 + v**2
         for i in range(9):
             cu = self.c[i, 0] * u + self.c[i, 1] * v
-            cu = np.clip(cu, -1e3, 1e3)  
+            cu = np.clip(cu, -1e3, 1e3)
             feq[i] = self.w[i] * rho * (1 + 3 * cu + 4.5 * cu**2 - 1.5 * u2)
-        return np.clip(feq, 0, 1e3)  
+        return np.clip(feq, 0, 1e3)
 
     def step(self):
         """Perform one LBM time step (Collision + Streaming)."""
         # 1. Macroscopic variables
         self.rho = np.sum(self.f, axis=0)
-        self.rho = np.clip(self.rho, 1e-3, 1e3)  
-        self.u = np.sum(self.f * self.c[:, 0, np.newaxis, np.newaxis], axis=0) / self.rho
-        self.v = np.sum(self.f * self.c[:, 1, np.newaxis, np.newaxis], axis=0) / self.rho
+        self.rho = np.clip(self.rho, 1e-3, 1e3)
+        self.u = (
+            np.sum(self.f * self.c[:, 0, np.newaxis, np.newaxis], axis=0) / self.rho
+        )
+        self.v = (
+            np.sum(self.f * self.c[:, 1, np.newaxis, np.newaxis], axis=0) / self.rho
+        )
 
         # Track Max Velocity and Min Pressure (P = rho / 3 in LBM)
         u_mag = np.sqrt(self.u**2 + self.v**2)
@@ -111,7 +126,7 @@ class D2Q9LBM:
         for i in range(9):
             self.f[i, :, 0] = self.f[self.opposite[i], :, 0]  # Bottom
             self.f[i, :, -1] = self.f[self.opposite[i], :, -1]  # Top
-            
+
         self.u[:, 0] = 0
         self.v[:, 0] = 0
         self.u[:, -1] = 0
@@ -139,17 +154,23 @@ class D2Q9LBM:
         nu_lattice = (self.tau - 0.5) / 3.0
         Re = (self.u_inlet * D_lattice) / nu_lattice
 
-        fig.suptitle(rf"LBM Flow Past a Cylinder ($\tau$={self.tau}, $u$={self.u_inlet}, Re = {Re:.1f})")
+        fig.suptitle(
+            rf"LBM Flow Past a Cylinder ($\tau$={self.tau}, $u$={self.u_inlet}, Re = {Re:.1f})"
+        )
         physical_extent = [0, self.nx * self.resolution, 0, self.ny * self.resolution]
 
         u_magnitude = np.sqrt(self.u**2 + self.v**2)
         vorticity = np.gradient(self.v, axis=0) - np.gradient(self.u, axis=1)
 
-        vel_plot = ax1.imshow(u_magnitude.T, origin="lower", cmap="viridis", extent=physical_extent)
+        vel_plot = ax1.imshow(
+            u_magnitude.T, origin="lower", cmap="viridis", extent=physical_extent
+        )
         ax1.set_title("Velocity Magnitude")
         plt.colorbar(vel_plot, ax=ax1, orientation="horizontal", shrink=0.8, pad=0.18)
 
-        vort_plot = ax2.imshow(vorticity.T, origin="lower", cmap="RdBu", extent=physical_extent)
+        vort_plot = ax2.imshow(
+            vorticity.T, origin="lower", cmap="RdBu", extent=physical_extent
+        )
         ax2.set_title("Vorticity")
         plt.colorbar(vort_plot, ax=ax2, orientation="horizontal", shrink=0.8, pad=0.18)
 
@@ -174,17 +195,23 @@ class D2Q9LBM:
         nu_lattice = (self.tau - 0.5) / 3.0
         Re = (self.u_inlet * D_lattice) / nu_lattice
 
-        fig.suptitle(rf"LBM Flow ($\tau$={self.tau}, $u=${self.u_inlet}, Re = {Re:.1f})")
+        fig.suptitle(
+            rf"LBM Flow ($\tau$={self.tau}, $u=${self.u_inlet}, Re = {Re:.1f})"
+        )
         physical_extent = [0, self.nx * self.resolution, 0, self.ny * self.resolution]
 
         u_magnitude = np.sqrt(self.u**2 + self.v**2)
         vorticity = np.gradient(self.v, axis=0) - np.gradient(self.u, axis=1)
 
-        vel_plot = ax1.imshow(u_magnitude.T, origin="lower", cmap="viridis", extent=physical_extent)
+        vel_plot = ax1.imshow(
+            u_magnitude.T, origin="lower", cmap="viridis", extent=physical_extent
+        )
         ax1.set_title("Velocity Magnitude")
         plt.colorbar(vel_plot, ax=ax1, orientation="horizontal", shrink=0.8, pad=0.18)
 
-        vort_plot = ax2.imshow(vorticity.T, origin="lower", cmap="RdBu", extent=physical_extent)
+        vort_plot = ax2.imshow(
+            vorticity.T, origin="lower", cmap="RdBu", extent=physical_extent
+        )
         ax2.set_title("Vorticity")
         plt.colorbar(vort_plot, ax=ax2, orientation="horizontal", shrink=0.8, pad=0.18)
 
@@ -206,44 +233,53 @@ class D2Q9LBM:
             return vel_plot, vort_plot, step_text
 
         print(f"Starting animation with interval={interval} ms...")
-        ani = animation.FuncAnimation(fig, update, frames=steps, interval=interval, blit=False, repeat=False)
+        ani = animation.FuncAnimation(
+            fig, update, frames=steps, interval=interval, blit=False, repeat=False
+        )
         plt.subplots_adjust(top=0.85, bottom=0.1, hspace=0.5)
         plt.show()
         print("Animation completed.")
 
-    def plot_histories(self):
-        """Plot the tracked physical quantities with a placeholder for external data."""
+    def plot_histories(self, show=True, save_path=None):
+        """Plot the tracked physical quantities with formal titles and strict units."""
         fig, axs = plt.subplots(2, 2, figsize=(12, 8))
-        fig.suptitle("Simulation Physical Quantities over Time")
+        fig.suptitle(r"LBM Simulation: Physical Quantities over Time")
 
-        # Top Left: Max Velocity
-        axs[0, 0].plot(self.max_u_history, color='tab:red')
-        axs[0, 0].set_title("Max Velocity Magnitude (Lattice Units)")
+        # Top Left: Max Absolute Velocity
+        axs[0, 0].plot(self.max_u_history, color="tab:red")
+        axs[0, 0].set_title(r"Max Absolute Velocity ($|\mathbf{u}|_{\max}$)")
         axs[0, 0].set_xlabel("Time Step")
-        axs[0, 0].set_ylabel("Velocity")
+        axs[0, 0].set_ylabel(r"Velocity ($|\mathbf{u}|$) (lu/ts)")
         axs[0, 0].grid(True, alpha=0.3)
 
         # Top Right: Min Pressure
-        axs[0, 1].plot(self.min_p_history, color='tab:blue')
-        axs[0, 1].set_title("Min Pressure (Lattice Units)")
+        axs[0, 1].plot(self.min_p_history, color="tab:blue")
+        axs[0, 1].set_title(
+            r"Minimum Pressure ($p_{\min}$)"
+        )  # Switched to small p for local pressure
         axs[0, 1].set_xlabel("Time Step")
-        axs[0, 1].set_ylabel("Pressure")
+        axs[0, 1].set_ylabel("Pressure (lu)")
         axs[0, 1].grid(True, alpha=0.3)
 
-        # Bottom Left: Calculated LBM Drag & Lift
-        axs[1, 0].plot(self.drag_history, color='tab:green', label='Drag')
-        axs[1, 0].plot(self.lift_history, color='tab:orange', label='Lift')
-        axs[1, 0].set_title("LBM Forces on Cylinder")
+        # Bottom Left: Lift (Accuracy/Shedding)
+        axs[1, 0].plot(self.lift_history, color="tab:orange")
+        axs[1, 0].set_title(r"Lift Coefficient ($C_L$)")
         axs[1, 0].set_xlabel("Time Step")
-        axs[1, 0].set_ylabel("Force")
+        axs[1, 0].set_ylabel(r"$C_L$")
         axs[1, 0].grid(True, alpha=0.3)
-        axs[1, 0].legend()
 
-        # Bottom Right: PLACEHOLDER FOR TEAMMATE'S PLOT
-        axs[1, 1].axis('off')
-        axs[1, 1].text(0.5, 0.5, "[ PASTE TEAMMATE'S DRAG/LIFT DATA HERE ]", 
-                       ha='center', va='center', fontsize=12, style='italic',
-                       bbox=dict(facecolor='lightgrey', alpha=0.5, pad=10))
+        # Bottom Right: Drag (Stability)
+        axs[1, 1].plot(self.drag_history, color="tab:green")
+        axs[1, 1].set_title(r"Drag Coefficient ($C_D$)")
+        axs[1, 1].set_xlabel("Time Step")
+        axs[1, 1].set_ylabel(r"$C_D$")
+        axs[1, 1].grid(True, alpha=0.3)
 
         plt.tight_layout()
-        plt.show()
+
+        if save_path:
+            plt.savefig(save_path, bbox_inches="tight")
+            print(f"Plot saved to {save_path}")
+
+        if show:
+            plt.show()
