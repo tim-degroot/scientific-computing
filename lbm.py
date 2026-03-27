@@ -184,7 +184,7 @@ class D2Q9LBM:
         """
         fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 6))
         fig.suptitle(
-            f"LBM Flow Past Cylinder (tau={self.tau:.2f}, u={self.u_inlet:.2f}, Re={self.Re:.1f})"
+            f"LBM Flow (Re={self.Re:.1f}, tau={self.tau:.2f}, u={self.u_inlet:.2f})"
         )
         extent = [0, self.nx * self.resolution, 0, self.ny * self.resolution]
         u_mag = np.sqrt(self.ux**2 + self.uy**2)
@@ -238,7 +238,7 @@ class D2Q9LBM:
 
         # Animation mode
         fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(8, 6))
-        fig.suptitle(f"LBM Flow (tau={self.tau:.2f}, u={self.u_inlet:.2f}, Re={self.Re:.1f})")
+        fig.suptitle(f"LBM Flow (Re={self.Re:.1f}, tau={self.tau:.2f}, u={self.u_inlet:.2f})")
         extent = [0, self.nx * self.resolution, 0, self.ny * self.resolution]
         u_mag = np.sqrt(self.ux**2 + self.uy**2)
         vort = np.gradient(self.uy, axis=0) - np.gradient(self.ux, axis=1)
