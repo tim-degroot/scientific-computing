@@ -27,27 +27,24 @@ if __name__ == "__main__":
     print("I.3 Lattice Boltzmann Method")
 
     experiments = [
-        {"resolution": 0.01, "tau": 0.6, "u_inlet": 0.133},  # Re = 60.0, Ma = 0.35
         # 1. High Mach Test: Original run with high velocity. 
-        # Risk of compressibility errors, but good for seeing early symmetry.
-        {"resolution": 0.01, "tau": 0.6, "u_inlet": 0.2},  # Re = 60.0, Ma = 0.35
+        {"resolution": 0.01, "tau": 0.6, "u_inlet": 0.2, "steps": 950},  # Re = 60.0, Ma = 0.35
 
-        # 2. Critical Stability Test: Original run with tau close to 0.5. 
-        # High resolution is usually needed here to prevent the oscillations seen in the plots.
-        {"resolution": 0.01, "tau": 0.55, "u_inlet": 0.1}, # Re = 60.0, Ma = 0.17
+        # 2. Tweaking inlet velocity for better stability.
+        {"resolution": 0.01, "tau": 0.6, "u_inlet": 0.133, "steps": 2000},  # Re = 39.9, Ma = 0.23
 
-        # 3. Stable Shedding (Re ≈ 100): Lower Ma for better stability.
-        {"resolution": 0.005, "tau": 0.525, "u_inlet": 0.06}, 
+        # 3. Critical Stability Test: Original run with tau close to 0.5. 
+        {"resolution": 0.01, "tau": 0.55, "u_inlet": 0.1, "steps": 2000}, # Re = 60.0, Ma = 0.17
 
-        # 4. High Reynolds (Re ≈ 150): Stronger vortex street, finer mesh.
-        {"resolution": 0.004, "tau": 0.515, "u_inlet": 0.06},
+        # 4. Stable Shedding (Re = 144): Lower Ma for better stability.
+        {"resolution": 0.005, "tau": 0.525, "u_inlet": 0.06, "steps": 2000}, # Re = 144.0, Ma = 0.10
 
-        # 5. Low Viscosity Test (Re ≈ 200): Requires high resolution to avoid crashing.
-        {"resolution": 0.003, "tau": 0.512, "u_inlet": 0.06},
+        # 5. High Reynolds (Re = 400): Stronger vortex street, finer mesh.
+        {"resolution": 0.003, "tau": 0.515, "u_inlet": 0.06, "steps": 2000}, # Re = 400.0, Ma = 0.10
     ]
 
-    for i, params in enumerate(experiments[:]):
-        resolution, tau, u_inlet = params.values()
+    for i, params in enumerate(experiments):
+        resolution, tau, u_inlet, steps = params.values()
         print(f"\nRunning experiment {i+1} with tau={tau}, u_inlet={u_inlet}")
 
         D_lattice = 2 * (0.05 / resolution)
@@ -61,11 +58,11 @@ if __name__ == "__main__":
         lbm = D2Q9LBM(resolution, tau, u_inlet)
 
         # Unified runner call
-        lbm.run(steps=1000, animate=not args.hide, interval=20)
+        lbm.run(steps=steps, animate=not args.hide, interval=20)
 
         print("   Simulation completed.")
 
         lbm.plot_histories(
             show=not args.hide,
-            save_path=f"{PLOTS_DIR}lbm_{i+1}_r{resolution}_tau{tau}_u{u_inlet}_Re{Re:.0f}{PLOTS_FORMAT}",
+            save_path=f"{PLOTS_DIR}lbm_{i+1}_r{resolution}_tau{tau}_u{u_inlet}_Re{Re:.0f}_Steps{steps}{PLOTS_FORMAT}",
         )

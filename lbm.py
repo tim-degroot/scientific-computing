@@ -84,7 +84,10 @@ class D2Q9LBM:
         # Track histories
         u_mag = np.sqrt(self.u**2 + self.v**2)
         self.max_u_history.append(np.max(u_mag))
-        self.min_p_history.append(np.min(self.rho) / 3.0)
+        
+        # Mask cylinder area as NaN to exclude it from minimum pressure tracking
+        rho_masked = np.where(self.obstacle, np.nan, self.rho)
+        self.min_p_history.append(np.nanmin(rho_masked) / 3.0)
 
         # Collision (BGK)
         feq = self.equilibrium(self.rho, self.u, self.v)
@@ -174,7 +177,11 @@ class D2Q9LBM:
             drag += np.sum(dp_x)
             lift += np.sum(dp_y)
         self.max_u_history.append(np.max(u_mag))
-        self.min_p_history.append(np.min(self.rho) / 3.0)
+        
+        # Mask cylinder area as NaN to exclude it from minimum pressure tracking
+        rho_masked = np.where(self.obstacle, np.nan, self.rho)
+        self.min_p_history.append(np.nanmin(rho_masked) / 3.0)
+        
         self.drag_history.append(drag)
         self.lift_history.append(lift)
 
