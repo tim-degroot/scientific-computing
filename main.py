@@ -28,7 +28,7 @@ if __name__ == "__main__":
 
     experiments = [
         # 1. High Mach Test: Original run with high velocity. 
-        {"resolution": 0.005, "Re": 100, "u_inlet": 0.12, "steps": 950},  # Re = 60.0, Ma = 0.35
+        {"resolution": 0.005, "Re": 100, "u_inlet": 0.12, "steps": 10000},  # Re = 60.0, Ma = 0.35
 
         # # 2. Tweaking inlet velocity for better stability.
         # {"resolution": 0.01, "tau": 0.6, "u_inlet": 0.133, "steps": 2000},  # Re = 39.9, Ma = 0.23
@@ -36,33 +36,29 @@ if __name__ == "__main__":
         # # 3. Critical Stability Test: Original run with tau close to 0.5. 
         # {"resolution": 0.01, "tau": 0.55, "u_inlet": 0.1, "steps": 2000}, # Re = 60.0, Ma = 0.17
 
-        # # 4. Stable Shedding (Re = 144): Lower Ma for better stability.
-        # {"resolution": 0.005, "tau": 0.525, "u_inlet": 0.06, "steps": 2000}, # Re = 144.0, Ma = 0.10
+        # 4. Stable Shedding (Re = 144): Lower Ma for better stability.
+        {"resolution": 0.005, "Re": 150, "u_inlet": 0.12, "steps": 10000}, # Re = 144.0, Ma = 0.10
 
-        # # 5. High Reynolds (Re = 400): Stronger vortex street, finer mesh.
-        # {"resolution": 0.003, "tau": 0.515, "u_inlet": 0.06, "steps": 2000}, # Re = 400.0, Ma = 0.10
+        # 5. High Reynolds (Re = 400): Stronger vortex street, finer mesh.
+        {"resolution": 0.003, "Re": 200, "u_inlet": 0.12, "steps": 10000}, # Re = 400.0, Ma = 0.10
     ]
 
     for i, params in enumerate(experiments):
-        resolution, tau, u_inlet, steps = params.values()
-        print(f"\nRunning experiment {i+1} with tau={tau}, u_inlet={u_inlet}")
-
-        D_lattice = 2 * (0.05 / resolution)
-        nu_lattice = (tau - 0.5) / 3.0
-        Re = (u_inlet * D_lattice) / nu_lattice
+        resolution, Re, u_inlet, steps = params.values()
+        print(f"\nRunning experiment {i+1} with Re={Re}, u_inlet={u_inlet}")
         Ma = u_inlet / (1 / np.sqrt(3))
 
         print(f"Re = {Re:.1f}, Ma = {Ma:.2f}")
 
         # Instantiate model
-        lbm = D2Q9LBM(resolution, tau, u_inlet)
+        lbm = D2Q9LBM(resolution, Re, u_inlet)
 
         # Unified runner call
-        lbm.run(steps=steps, animate=not args.hide, interval=20)
+        lbm.run(steps=steps, animate=not args.hide, interval=10, steps_per_frame=10)
 
         print("   Simulation completed.")
 
         lbm.plot_histories(
             show=not args.hide,
-            save_path=f"{PLOTS_DIR}lbm_{i+1}_r{resolution}_tau{tau}_u{u_inlet}_Re{Re:.0f}_Steps{steps}{PLOTS_FORMAT}",
+            save_path=f"{PLOTS_DIR}lbm_{i+1}_r{resolution}_Re{Re:.0f}_u{u_inlet}_steps{steps}{PLOTS_FORMAT}",
         )

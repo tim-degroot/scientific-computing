@@ -184,7 +184,7 @@ class D2Q9LBM:
         """
         fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 6))
         fig.suptitle(
-            f"LBM Flow Past Cylinder (tau={self.tau}, u={self.u_inlet}, Re={self.Re:.1f})"
+            f"LBM Flow Past Cylinder (tau={self.tau:.2f}, u={self.u_inlet:.2f}, Re={self.Re:.1f})"
         )
         extent = [0, self.nx * self.resolution, 0, self.ny * self.resolution]
         u_mag = np.sqrt(self.ux**2 + self.uy**2)
@@ -199,7 +199,7 @@ class D2Q9LBM:
         plt.subplots_adjust(top=0.85, bottom=0.1, hspace=0.5)
         plt.show()
 
-    def run(self, steps, animate=False, interval=50, store_every=None):
+    def run(self, steps, animate=False, interval=50, steps_per_frame=1, store_every=None):
         """
         Run the simulation for a given number of steps, optionally with animation.
         Resets histories at the start of each run.
@@ -237,8 +237,8 @@ class D2Q9LBM:
             return
 
         # Animation mode
-        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 6))
-        fig.suptitle(f"LBM Flow (tau={self.tau}, u={self.u_inlet}, Re={self.Re:.1f})")
+        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(8, 6))
+        fig.suptitle(f"LBM Flow (tau={self.tau:.2f}, u={self.u_inlet:.2f}, Re={self.Re:.1f})")
         extent = [0, self.nx * self.resolution, 0, self.ny * self.resolution]
         u_mag = np.sqrt(self.ux**2 + self.uy**2)
         vort = np.gradient(self.uy, axis=0) - np.gradient(self.ux, axis=1)
@@ -251,7 +251,8 @@ class D2Q9LBM:
         step_text = fig.text(0.5, 0.92, f"Step: 0", ha="center", fontsize=12)
 
         def update(frame):
-            self.step()
+            for _ in range(steps_per_frame):
+                self.step()
             u_mag = np.sqrt(self.ux**2 + self.uy**2)
             vort = np.gradient(self.uy, axis=0) - np.gradient(self.ux, axis=1)
             im1.set_data(u_mag.T)
@@ -259,12 +260,12 @@ class D2Q9LBM:
             im1.set_clim(vmin=0, vmax=np.max(u_mag) + 1e-5)
             vmax_vort = np.max(np.abs(vort)) + 1e-5
             im2.set_clim(vmin=-vmax_vort, vmax=vmax_vort)
-            step_text.set_text(f"Step: {frame + 1}")
+            step_text.set_text(f"Step: {frame * steps_per_frame + steps_per_frame}")
             return im1, im2, step_text
 
         print(f"Starting animation with interval={interval} ms...")
         ani = animation.FuncAnimation(
-            fig, update, frames=steps, interval=interval, blit=False, repeat=False
+            fig, update, frames=int(steps/steps_per_frame), interval=interval, blit=False, repeat=False
         )
         plt.subplots_adjust(top=0.85, bottom=0.1, hspace=0.5)
         plt.show()
