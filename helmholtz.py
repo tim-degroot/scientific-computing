@@ -2,111 +2,180 @@ from ngsolve import *
 from netgen.occ import *
 import numpy as np
 
+class helmholtz():
+    def __init__(self, maxh=0.05, scale=3):
+        
+        self.A = 10e4
+        self.omega = 0.2
+        self.maxh = maxh
+        
+        f_wifi = 2.4e9 / scale
+        c = 3e8         # Speed of light
+        self.k0 = (2 * np.pi * f_wifi) / c
+        
+        
+        self.mesh = None
+        self.k_coeff = None
+        
 
-def floor_plan_mesh():
-    """
-    inner_walls_coords: List of tuples ((x1, y1), (x2, y2)) for wall corners
-    """
-    # 1. Create the outer boundary (10x8)
-    # We create the "air" first, then the thick outer walls
-    outer_rect = Rectangle(10, 8).Face()
-    inner_rect = Rectangle(9.7, 7.7).Face().Move(gp_Vec(0.15, 0.15, 0))
-    
-    # Outer walls are the difference
-    outer_walls = outer_rect - inner_rect
-    outer_walls.faces.name = "outer_wall"
-    
-    # 2. Create Inner Walls
-    inner_walls_coords = [
-    ((0, 2.925), (3, 3.075)),
-    ((4, 2.925), (6, 3.075)),
-    ((7, 2.925), (10, 3.075)),
-    ((5.925, 3), (6.075, 8)),
-    ((2.425, 0), (2.575, 2)),
-    ((6.925, 2.5), (7.075, 3)),
-    ((6.925, 0), (7.075, 1.5))]
-    
-    inner_walls_list = []
-    for i, (p1, p2) in enumerate(inner_walls_coords):
-        # Calculate width and height from coordinates
-        w = abs(p2[0] - p1[0])
-        h = abs(p2[1] - p1[1])
-        wall = Rectangle(w, h).Face().Move(gp_Vec(p1[0], p1[1], 0))
-        wall.faces.name = f"inner_wall_{i}"
-        inner_walls_list.append(wall)
-    
-    # 3. Assemble the geometry
-    # We subtract all inner walls from the 'inner_rect' (the air) 
-    # so that the air domain doesn't overlap with the walls.
-    air = inner_rect
-    for wall in inner_walls_list:
-        air = air - wall
-    air.faces.name = "air"
-    
-    # Glue everything together into one geometry
-    # This ensures a single mesh where boundaries are shared
-    full_layout = Glue([air, outer_walls] + inner_walls_list)
-    
-    geo = OCCGeometry(full_layout, dim=2)
-    
-    # Generate mesh
-    # maxh=0.1 ensures we have enough points to resolve the 0.15 thick walls
-    mesh = Mesh(geo.GenerateMesh(maxh=0.1))
-    return mesh
+    def floor_plan_mesh(self):
+        # 1. Create the outer frame
+        outer_rect = Rectangle(10, 8).Face()
+        inner_rect = Rectangle(9.7, 7.7).Face().Move(gp_Vec(0.15, 0.15, 0))
+        outer_walls = outer_rect - inner_rect
+        outer_walls.faces.name = "outer_wall"
+        
+        # 2. Coordinates
+        inner_walls_coords = [
+            ((0, 2.925), (3, 3.075)),
+            ((4, 2.925), (6, 3.075)),
+            ((7, 2.925), (10, 3.075)),
+            ((5.925, 3), (6.075, 8)),
+            ((2.425, 0), (2.575, 2)),
+            ((6.925, 2.5), (7.075, 3)),
+            ((6.925, 0), (7.075, 1.5))
+        ]
+        
+        inner_walls_list = []
+        air = inner_rect
+        
+        for i, (p1, p2) in enumerate(inner_walls_coords):
+            w, h = abs(p2[0]-p1[0]), abs(p2[1]-p1[1])
+            # Create the raw wall shape
+            raw_wall = Rectangle(w, h).Face().Move(gp_Vec(p1[0], p1[1], 0))
+            
+            # INTERSECT with inner_rect so walls don't stick out into the outer frame
+            # This keeps the geometry "clean"
+            actual_wall = raw_wall * inner_rect 
+            actual_wall.faces.name = f"inner_wall" # Grouping them under one name
+            
+            inner_walls_list.append(actual_wall)
+            # Subtract from air to create the "hole"
+            air = air - actual_wall
 
-# Parameters
-f_wifi = 2.4e9  # 2.4 GHz
-c = 3e8         # Speed of light
-k0 = 2 * np.pi * f_wifi / c
+        air.faces.name = "air"
+        
+        # 3. Assemble
+        full_layout = Glue([air, outer_walls] + inner_walls_list)
+        geo = OCCGeometry(full_layout, dim=2)
+        
+        # maxh note: at 2.4GHz, k~50. To resolve waves inside walls (n=2.5),
+        # you need maxh around 0.02 to 0.05 for high accuracy.
+        self.mesh = Mesh(geo.GenerateMesh(maxh=self.maxh))
+        
 
-mesh = floor_plan_mesh()
+    def material_mapping(self):
+        
+        # 2. Define Material Mapping
+        # 'air' and the wall names must match the names defined in your floor_plan_mesh function
+        n_air = 1.0
+        n_wall = 2.5 + 0.5j
 
-# Finite Element Space (H1 elements)
-fes = H1(mesh, order=5, complex=True)
-u, v = fes.TnT()
+        # Map materials to their respective k-values (k = k0 * n)
+        # Make sure these strings match your mesh.GetMaterials()
+        material_map = {
+            "air": self.k0 * n_air,
+            "outer_wall": self.k0 * n_wall,
+            "inner_wall": self.k0 * n_wall
+        }
 
-# Gaussian pulse plus router position
-omega = 0.2
-router_pos = (4, 4)
-pulse = 10e4*exp(-0.5*omega**2 * ((x-router_pos[0])**2 + (y-router_pos[1])**2))
-
-# # Forms
-# a = BilinearForm(fes)
-# a += grad(u)*grad(v)*dx - omega**2*u*v*dx
-# a += -omega*1j*u*v * ds("outer") # Add absorbing boundary condition on the outer "void"
-# a.Assemble()
-
-# 2. Define Material Mapping
-# 'air' and the wall names must match the names defined in your floor_plan_mesh function
-material_indices = {
-    "air": 1.0,
-    "outer_wall": 2.5 + 0.5j,
-    "inner_wall": 2.5 + 0.5j
-}
-
-# Create the CoefficientFunction for n
-n_coeff = CoefficientFunction([material_indices.get(mat, 1.0) for mat in mesh.GetMaterials()])
-k_coeff = k0 * n_coeff
-
-# 3. Bilinear Form
-a = BilinearForm(fes)
-
-# Internal Continuity: FEM handles this naturally at the interface 
-# of different material domains as long as the mesh is conformal (Glued).
-a += (grad(u)*grad(v) - k_coeff**2 * u * v) * dx
-
-# Boundary Condition: Impedance/Absorbing BC on the "outer" boundary
-# Note: Ensure your mesh boundary is named "outer" or change to "outer_boundary"
-a += -1j * k0 * u * v * ds("outer_wall") 
-
-a.Assemble()
+        # Create a CoefficientFunction for k over the whole domain
+        self.k_coeff = CoefficientFunction([material_map.get(mat, self.k0) for mat in self.mesh.GetMaterials()])
 
 
+    def router(self, pos):
+        
+        # Gaussian pulse from router position
+        self.pulse = self.A*exp(-0.5* (self.omega**2) * ((x-pos[0])**2 + (y-pos[1])**2))
 
-f = LinearForm(pulse * v * dx).Assemble()
+    def solve_helmholtz(self, router_pos):
 
+        self.floor_plan_mesh()
+        self.material_mapping()
 
-# Solve
-gfu = GridFunction(fes, name="u")
-gfu.vec.data = a.mat.Inverse() * f.vec
-Draw(gfu, mesh, "wifi_strength")
+        # 3. Bilinear Form
+        # Finite Element Space (H1 elements)
+        fes = H1(self.mesh, order=6, complex=True)
+        u, v = fes.TnT()
+        a = BilinearForm(fes)
+        a += (grad(u)*grad(v) - self.k_coeff**2 * u * v) * dx
+
+        # Boundary Condition: Impedance/Absorbing BC on the "outer" boundary
+        a += -1j * self.k0 * u * v * ds("outer_wall")
+
+        a.Assemble()
+
+        self.router(router_pos)
+
+        # Linear form
+        f = LinearForm(self.pulse * v * dx).Assemble()
+
+        # Solve
+        self.gfu = GridFunction(fes, name="u")
+        self.gfu.vec.data = a.mat.Inverse() * f.vec
+        
+        # Draw(np.real(self.gfu), self.mesh, "wifi_strength")
+        
+        
+        # Calculate dB: 20 * log10(Abs(u))
+        # We add a tiny epsilon (1e-10) to avoid log(0) errors
+        mag_normalized = self.gfu / self.A
+        db_signal = 20 * log(mag_normalized + 1e-10) / log(10)
+        
+        # Plotting dB is best with a fixed range. 
+        # Real Wi-Fi usually sits between -30 dB (Great) and -90 dB (Dead)
+        Draw(db_signal, self.mesh, "wifi_strength_dB", min=-90, max=0)
+        
+        
+
+    def wifi_strength(self, rad=0.5):
+        
+        # Measurement points (Living room, Kitchen, Bathroom, Bedroom)
+        points = [(1, 5), (2, 1), (9, 1), (9, 7)]
+        
+        total_signal_sum = 0
+        signal_magnitude = self.gfu # Standard magnitude for wifi strength
+        
+        
+
+        print("--- Signal Strength Report ---")
+
+        for i, (px, py) in enumerate(points):
+            
+            # Create a mask for the circular region around the point
+            dist_sq = (x - px)**2 + (y - py)**2
+            
+            # If distance < radius, value is 1, else 0
+            indicator = IfPos(rad**2 - dist_sq, 1, 0)
+            
+            # Calculate the integral of |u| over that specific circle
+            integral_val = Integrate(signal_magnitude * indicator, self.mesh)
+            
+            # Calculate the area (denominator)
+            # While mathematically pi*r^2, integrating the indicator is more numerically robust
+            area = Integrate(indicator, self.mesh)
+            
+            if area > 0:
+                avg_strength = integral_val / area
+                
+                # Calculate dB: 20 * log10(Abs(u))
+                
+                # We add a tiny epsilon (1e-10) to avoid log(0) errors
+                avg_strength_db = np.real(20 * np.log(avg_strength + 1e-10) / np.log(10))
+                
+            else:
+                avg_strength_db = 0
+                print(f"Warning: Point {px, py} is outside the mesh or circle is too small for maxh!")
+
+            total_signal_sum += avg_strength_db
+            print(f"Room {i+1} at ({px}, {py}): Average Strength = {avg_strength_db:.4f}")
+
+        print("-" * 30)
+        print(f"TOTAL MEASURED SIGNAL STRENGTH: {total_signal_sum:.4f}")
+                
+
+# if __name__=="__main__":
+
+sim = helmholtz(maxh=0.075)
+sim.solve_helmholtz(router_pos=(2.5, 5.5))
+sim.wifi_strength()
