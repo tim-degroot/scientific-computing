@@ -113,13 +113,7 @@ class D2Q9LBM:
         """
         Advance the simulation by one time step (collision, streaming, boundaries).
         """
-        # -------------------------------------------------------------
-        # 7a.  Macroscopic quantities: density and velocity
-        #      rho = Σ f_i,   rho·u = Σ c_i · f_i
-        # -------------------------------------------------------------
-        self.rho = np.sum(self.f, axis=2)
-        self.ux  = np.sum(self.f * self.c[:, 0], axis=2) / self.rho
-        self.uy  = np.sum(self.f * self.c[:, 1], axis=2) / self.rho
+        
 
 
         # Track histories
@@ -134,9 +128,7 @@ class D2Q9LBM:
         feq = self.equilibrium()
         f_out = self.f - (self.f - feq) / self.tau
 
-
         # Bounce-back and force tracking
-        # Cylinder
         drag, lift = 0.0, 0.0
         for i in range(9):
             f_out[self.obstacle, i] = self.f[self.obstacle, self.opposite[i]]
@@ -149,16 +141,17 @@ class D2Q9LBM:
         # Track drag and lift coefficient
         self.drag_history.append(drag)
         self.lift_history.append(lift)
-        
+
         # Streaming
         for i in range(9):
             self.f[:, :, i] = np.roll(f_out[:, :, i], shift=self.c[i, 0], axis=0)
             self.f[:, :, i] = np.roll(self.f[:, :, i],shift=self.c[i, 1], axis=1)
             
-        # Apply this to the WHOLE length of the top/bottom rows
-        self.f[:, 0, [2,5,6]] = f_out[:, 0, [4,7,8]]
-        self.f[:, -1, [4,7,8]] = f_out[:, -1, [2,5,6]]
+        # Change [:] to [1:-1] to leave the inlet and outlet columns alone
+        self.f[1:-1, 0, [2,5,6]] = f_out[1:-1, 0, [4,7,8]]
+        self.f[1:-1, -1, [4,7,8]] = f_out[1:-1, -1, [2,5,6]]
         
+
         # -------------------------------------------------------------
         # 7f.  Inlet boundary condition (Zou-He, fixed velocity)
         #      After streaming, populations 1, 5, 8 at x=0 are unknown
@@ -175,6 +168,14 @@ class D2Q9LBM:
         
         # Outlet (right)
         self.f[-1, :, :] = self.f[-2, :, :]
+        
+        # -------------------------------------------------------------
+        # 7a.  Macroscopic quantities: density and velocity
+        #      rho = Σ f_i,   rho·u = Σ c_i · f_i
+        # -------------------------------------------------------------
+        self.rho = np.sum(self.f, axis=2)
+        self.ux  = np.sum(self.f * self.c[:, 0], axis=2) / self.rho
+        self.uy  = np.sum(self.f * self.c[:, 1], axis=2) / self.rho
         
 
     def visualize(self, step):

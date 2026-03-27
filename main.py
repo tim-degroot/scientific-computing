@@ -28,7 +28,7 @@ if __name__ == "__main__":
 
     experiments = [
         # 1. High Mach Test: Original run with high velocity. 
-        {"resolution": 0.01, "Re": 100, "u_inlet": 0.12, "steps": 950},  # Re = 60.0, Ma = 0.35
+        {"resolution": 0.005, "Re": 100, "u_inlet": 0.12, "steps": 950},  # Re = 60.0, Ma = 0.35
 
         # # 2. Tweaking inlet velocity for better stability.
         # {"resolution": 0.01, "tau": 0.6, "u_inlet": 0.133, "steps": 2000},  # Re = 39.9, Ma = 0.23
