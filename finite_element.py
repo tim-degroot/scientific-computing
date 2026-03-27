@@ -99,6 +99,9 @@ class NavierStokesSolver:
         times, drags, lifts = [], [], []
         t = 0
         res = self.gfu.vec.CreateVector()
+        
+        # for visualization
+        Draw(Norm(self.gfu.components[0]), self.mesh, "velocity", sd=3)
 
         with TaskManager():
             while t < self.tend:
@@ -114,14 +117,15 @@ class NavierStokesSolver:
                     lifts.append(cl)
                 
                 t += self.tau
+                Redraw()
                 
         return times, drags, lifts 
 
-# # --- Example Usage ---
-# solver = NavierStokesSolver(nu=0.001, tau=0.0005, tend=5.0)
-# solver.make_mesh(maxh=0.07)
-# solver.setup_spaces()
-# solver.set_inflow(max_vel=1.5)
-# solver.assemble_system()
-# solver.solve_initial_stokes()
-# solver.run_simulation()
+# --- Example Usage ---
+solver = NavierStokesSolver(nu=0.001, tau=0.0005, tend=5.0)
+solver.make_mesh(maxh=0.07)
+solver.setup_spaces()
+solver.set_inflow(max_vel=1.5)
+solver.assemble_system()
+solver.solve_initial_stokes()
+solver.run_simulation()
