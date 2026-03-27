@@ -80,13 +80,9 @@ pulse = 10e4*exp(-0.5*omega**2 * ((x-router_pos[0])**2 + (y-router_pos[1])**2))
 # 'air' and the wall names must match the names defined in your floor_plan_mesh function
 material_indices = {
     "air": 1.0,
-    "outer_wall": 2.5 + 0.5j
+    "outer_wall": 2.5 + 0.5j,
+    "inner_wall": 2.5 + 0.5j
 }
-
-# Add all inner walls to the dictionary (assuming they use the same 'Wall' properties)
-for mat in mesh.GetMaterials():
-    if "inner_wall" in mat:
-        material_indices[mat] = 2.5 + 0.5j
 
 # Create the CoefficientFunction for n
 n_coeff = CoefficientFunction([material_indices.get(mat, 1.0) for mat in mesh.GetMaterials()])

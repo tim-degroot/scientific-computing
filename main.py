@@ -28,19 +28,19 @@ if __name__ == "__main__":
 
     experiments = [
         # 1. High Mach Test: Original run with high velocity. 
-        {"resolution": 0.01, "tau": 0.6, "u_inlet": 0.2, "steps": 950},  # Re = 60.0, Ma = 0.35
+        {"resolution": 0.01, "Re": 100, "u_inlet": 0.12, "steps": 950},  # Re = 60.0, Ma = 0.35
 
-        # 2. Tweaking inlet velocity for better stability.
-        {"resolution": 0.01, "tau": 0.6, "u_inlet": 0.133, "steps": 2000},  # Re = 39.9, Ma = 0.23
+        # # 2. Tweaking inlet velocity for better stability.
+        # {"resolution": 0.01, "tau": 0.6, "u_inlet": 0.133, "steps": 2000},  # Re = 39.9, Ma = 0.23
 
-        # 3. Critical Stability Test: Original run with tau close to 0.5. 
-        {"resolution": 0.01, "tau": 0.55, "u_inlet": 0.1, "steps": 2000}, # Re = 60.0, Ma = 0.17
+        # # 3. Critical Stability Test: Original run with tau close to 0.5. 
+        # {"resolution": 0.01, "tau": 0.55, "u_inlet": 0.1, "steps": 2000}, # Re = 60.0, Ma = 0.17
 
-        # 4. Stable Shedding (Re = 144): Lower Ma for better stability.
-        {"resolution": 0.005, "tau": 0.525, "u_inlet": 0.06, "steps": 2000}, # Re = 144.0, Ma = 0.10
+        # # 4. Stable Shedding (Re = 144): Lower Ma for better stability.
+        # {"resolution": 0.005, "tau": 0.525, "u_inlet": 0.06, "steps": 2000}, # Re = 144.0, Ma = 0.10
 
-        # 5. High Reynolds (Re = 400): Stronger vortex street, finer mesh.
-        {"resolution": 0.003, "tau": 0.515, "u_inlet": 0.06, "steps": 2000}, # Re = 400.0, Ma = 0.10
+        # # 5. High Reynolds (Re = 400): Stronger vortex street, finer mesh.
+        # {"resolution": 0.003, "tau": 0.515, "u_inlet": 0.06, "steps": 2000}, # Re = 400.0, Ma = 0.10
     ]
 
     for i, params in enumerate(experiments):
