@@ -18,10 +18,11 @@ class finite_difference:
         self.inlet = inlet
         self.dx = resolution
         self.dy = resolution
-        # self.dt = 0.001
-        self.dt = 0.2 * min(self.dx / self.inlet, self.dx**2 / self.nu)
+        self.dt = 0.001
+        # self.dt = 0.5 * min(self.dx / self.inlet, self.dx**2 / (2*self.nu))
+        print(self.dt)
 
-        self.nit = 100
+        self.nit = 200
         self.time = 0.0
 
         # Calculate grid size based on resolution
@@ -29,9 +30,9 @@ class finite_difference:
         self.ny = int(domain_height / resolution)
 
         # Initialize macroscopic variables
-        self.p = np.ones((self.nx, self.ny))
-        self.u = np.zeros((self.nx, self.ny))
-        self.v = np.zeros((self.nx, self.ny))
+        self.p = np.zeros((self.nx, self.ny), dtype=float)
+        self.u = np.zeros((self.nx, self.ny), dtype=float)
+        self.v = np.zeros((self.nx, self.ny), dtype=float)
 
         # Set inlet velocity profile
         self.u[0,:] = self.inlet
@@ -48,77 +49,103 @@ class finite_difference:
                 if (i - cx) ** 2 + (j - cy) ** 2 <= r**2:
                     self.obstacle[i, j] = True
 
+# Dit is een test regel om aan te geven dat ik nu wat shit ga proberen waar ik mogelijk zodrekt crtl+z op knal
+
     def update_pressure(self):
         b = np.empty_like(self.p)
         b[1:-1, 1:-1] = (self.rho * 
-                         (1 / self.dt * 
-                          ((self.u[1:-1, 2:] - self.u[1:-1, 0:-2]) / (2 * self.dx) +
-                           (self.v[2:, 1:-1] - self.v[0:-2, 1:-1]) / (2 * self.dy)) - 
-                          ((self.u[1:-1, 2:] - self.u[1:-1, 0:-2]) / (2 * self.dx))**2 -
-                           2 * ((self.u[2:, 1:-1] - self.u[0:-2, 1:-1]) / (2 * self.dy) *
-                                (self.v[1:-1, 2:] - self.v[1:-1, 0:-2]) / (2 * self.dx)) -
-                          ((self.v[2:, 1:-1] - self.v[0:-2, 1:-1]) / (2 * self.dy))**2
+                         ((1 / self.dt) * 
+                          ((self.u[2:,1:-1] - self.u[0:-2, 1:-1]) / (2 * self.dx) +
+                           (self.v[1:-1, 2:] - self.v[1:-1, 0:-2]) / (2 * self.dy)) - 
+                          np.square((self.u[2:, 1:-1] - self.u[0:-2, 1:-1]) / (2 * self.dx)) -
+                           2 * ((self.u[1:-1, 2:] - self.u[1:-1, 0:-2]) / (2 * self.dy) *
+                                (self.v[2:, 1:-1] - self.v[0:-2, 1:-1]) / (2 * self.dx)) -
+                          np.square((self.v[1:-1, 2:] - self.v[1:-1, 0:-2]) / (2 * self.dy))
                          ))
             
         for _ in range(self.nit):
             n_p = np.copy(self.p)
             self.p[1:-1, 1:-1] = (
-                ((n_p[1:-1, 2:] + n_p[1:-1, :-2]) * self.dy**2 + 
-                 (n_p[2:, 1:-1] + n_p[:-2, 1:-1]) * self.dx**2) /
+                ((n_p[2:, 1:-1] + n_p[:-2, 1:-1]) * self.dy**2 + 
+                 (n_p[1:-1, 2:] + n_p[1:-1, :-2]) * self.dx**2) /
                  (2 * (self.dx**2 + self.dy**2)) -
                  (self.dx**2 * self.dy**2) / (2 * (self.dx**2 + self.dy**2)) * 
                  b[1:-1, 1:-1])
 
             # Boundary conditions
-            self.p[:, 0] = self.p[:, 1]     # inlet
-            self.p[:, -1] = 0               # outlet
-            self.p[0, :] = self.p[1, :]
-            self.p[-1, :] = self.p[-2, :]
+            self.p[0, :] = self.p[1, :]     # inlet
+            self.p[-1, :] = 0               # outlet
+            self.p[:, 0] = self.p[:, 1]
+            self.p[:, -1] = self.p[:, -2]
             
         return self.p
 
 
     def step(self):
-        n_u = np.copy(self.u)
-        n_v = np.copy(self.v)
+        n_u = self.u.copy()
+        n_v = self.v.copy()
 
         p = self.update_pressure()
 
-        self.u[1:-1, 1:-1] = (n_u[1:-1, 1:-1] - 
-                                n_u[1:-1, 1:-1] * (self.dt / self.dx) * (n_u[1:-1, 1:-1] - n_u[1:-1, 0:-2]) - 
-                                n_v[1:-1, 1:-1] * (self.dt / self.dy) * (n_u[1:-1, 1:-1] - n_u[0:-2, 1:-1]) -
-                                self.dt / (2 * self.rho * self.dx) * (p[1:-1, 2:] - p[1:-1, 0:-2]) + 
-                                self.nu * (
-                                    (self.dt / self.dx**2) * (n_u[1:-1, 2:] - 2 * n_u[1:-1, 1:-1] + n_u[1:-1, 0:-2]) + 
-                                    (self.dt / self.dy**2) * (n_u[2:, 1:-1] - 2 * n_u[1:-1, 1:-1] + n_u[0:-2, 1:-1])))
+        # Derivatives
+        du_dx = np.where(n_u > 0,
+                        (n_u - np.roll(n_u, 1, axis=0)) / self.dx,
+                        (np.roll(n_u, -1, axis=0) - n_u) / self.dx)
 
-        self.v[1:-1,1:-1] = (n_v[1:-1, 1:-1] -
-                                n_u[1:-1, 1:-1] * (self.dt / self.dx) * (n_v[1:-1, 1:-1] - n_v[1:-1, 0:-2]) -
-                                n_v[1:-1, 1:-1] * (self.dt / self.dy) * (n_v[1:-1, 1:-1] - n_v[0:-2, 1:-1]) -
-                                self.dt / (2 * self.rho * self.dy) * (p[2:, 1:-1] - p[0:-2, 1:-1]) +
-                                self.nu * (
-                                    (self.dt / self.dx**2) * (n_v[1:-1, 2:] - 2 * n_v[1:-1, 1:-1] + n_v[1:-1, 0:-2]) +
-                                    (self.dt / self.dy**2) * (n_v[2:, 1:-1] - 2 * n_v[1:-1, 1:-1] + n_v[0:-2, 1:-1])))
+        du_dy = np.where(n_v > 0,
+                        (n_u - np.roll(n_u, 1, axis=1)) / self.dy,
+                        (np.roll(n_u, -1, axis=1) - n_u) / self.dy)
+
+        dv_dx = np.where(n_u > 0,
+                        (n_v - np.roll(n_v, 1, axis=0)) / self.dx,
+                        (np.roll(n_v, -1, axis=0) - n_v) / self.dx)
+
+        dv_dy = np.where(n_v > 0,
+                        (n_v - np.roll(n_v, 1, axis=1)) / self.dy,
+                        (np.roll(n_v, -1, axis=1) - n_v) / self.dy)
+                        
+
+        # Diffusion
+        d2u_dx2 = (np.roll(n_u, -1, axis=0) - 2*n_u + np.roll(n_u, 1, axis=0)) / self.dx**2
+        d2u_dy2 = (np.roll(n_u, -1, axis=1) - 2*n_u + np.roll(n_u, 1, axis=1)) / self.dy**2
+
+        d2v_dx2 = (np.roll(n_v, -1, axis=0) - 2*n_v + np.roll(n_v, 1, axis=0)) / self.dx**2
+        d2v_dy2 = (np.roll(n_v, -1, axis=1) - 2*n_v + np.roll(n_v, 1, axis=1)) / self.dy**2
+
+        # Pressure gradients
+        dp_dx = (np.roll(p, -1, axis=0) - np.roll(p, 1, axis=0)) / (2*self.dx)
+        dp_dy = (np.roll(p, -1, axis=1) - np.roll(p, 1, axis=1)) / (2*self.dy)
+
+        # Velocity update
+        self.u = n_u - self.dt * (n_u * du_dx + n_v * du_dy) \
+                - self.dt / self.rho * dp_dx \
+                + self.nu * self.dt * (d2u_dx2 + d2u_dy2)
+
+        self.v = n_v - self.dt * (n_u * dv_dx + n_v * dv_dy) \
+                - self.dt / self.rho * dp_dy \
+                + self.nu * self.dt * (d2v_dx2 + d2v_dy2)
 
         # Boundary conditions
         # inlet
         self.u[0, :] = self.inlet
         self.v[0, :] = 0
+
         # outlet
         self.u[-1, :] = self.u[-2, :]
         self.v[-1, :] = self.v[-2, :]
+
         # walls
         self.u[:, 0] = 0
         self.u[:, -1] = 0
         self.v[:, 0] = 0
         self.v[:, -1] = 0
 
-        # Obstacle conditions
+        # obstacle
         self.u[self.obstacle] = 0
         self.v[self.obstacle] = 0
 
         self.time += self.dt
-    
+
         return self.u, self.v, self.p
         
     def visualize(self, step):
@@ -240,6 +267,6 @@ class finite_difference:
         print("Animation completed.")
 
 
-model = finite_difference(resolution=0.01, rho=1.0, nu=0.001666, inlet=1)
+model = finite_difference(resolution=0.005, rho=1.0, nu=0.001, inlet=1)
 print("Showing animation to demonstrate functionality...")
-model.run_animation(steps=2000, interval=50)
+model.run_animation(steps=100, interval=50)
