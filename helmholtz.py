@@ -1,6 +1,7 @@
 from ngsolve import *
 from netgen.occ import *
 import numpy as np
+import matplotlib.pyplot as plt
 
 class helmholtz():
     def __init__(self, maxh=0.05, scale=3):
@@ -88,14 +89,33 @@ class helmholtz():
         # Gaussian pulse from router position
         self.pulse = self.A*exp(-0.5* (self.omega**2) * ((x-pos[0])**2 + (y-pos[1])**2))
 
-    def solve_helmholtz(self, router_pos):
 
-        self.floor_plan_mesh()
+    def amplitude_to_db(self, gfu, ref=1):
+        """
+        gfu: The GridFunction (complex) from your Helmholtz solver
+        reference_A: The amplitude that represents 0 dB
+        """
+        # 1. Get the magnitude squared: |u|^2 = real^2 + imag^2
+        mag_sq = gfu.real**2 + gfu.imag**2
+        
+        # 2. Define a tiny epsilon to prevent log(0)
+        eps = 1e-12
+        
+        # 3. Calculate 10 * log10(|u|^2 / A^2)
+        # This is mathematically identical to 20 * log10(|u| / A)
+        ratio = mag_sq / (ref**2)
+        
+        # We use IfPos to safely handle areas where the signal is zero
+        return 10 * log(IfPos(ratio - eps, ratio, eps)) / log(10)
+
+
+    def solve_helmholtz(self, router_pos):
+        
         self.material_mapping()
 
         # 3. Bilinear Form
         # Finite Element Space (H1 elements)
-        fes = H1(self.mesh, order=6, complex=True)
+        fes = H1(self.mesh, order=5, complex=True)
         u, v = fes.TnT()
         a = BilinearForm(fes)
         a += (grad(u)*grad(v) - self.k_coeff**2 * u * v) * dx
@@ -112,31 +132,21 @@ class helmholtz():
 
         # Solve
         self.gfu = GridFunction(fes, name="u")
-        self.gfu.vec.data = a.mat.Inverse() * f.vec
+        self.gfu.vec.data = a.mat.Inverse() * f.vec        
         
-        # Draw(np.real(self.gfu), self.mesh, "wifi_strength")
-        
-        
-        # Calculate dB: 20 * log10(Abs(u))
-        # We add a tiny epsilon (1e-10) to avoid log(0) errors
-        mag_normalized = self.gfu / self.A
-        db_signal = 20 * log(mag_normalized + 1e-10) / log(10)
-        
-        # Plotting dB is best with a fixed range. 
-        # Real Wi-Fi usually sits between -30 dB (Great) and -90 dB (Dead)
-        Draw(db_signal, self.mesh, "wifi_strength_dB", min=-90, max=0)
-        
-        
+        self.db_signal = self.amplitude_to_db(self.gfu, self.A)
 
+        # 3. Draw the result
+        Draw(self.db_signal, self.mesh, "wifi_strength_dB", sd=4, autoscale=True)
+                
+        
     def wifi_strength(self, rad=0.5):
         
         # Measurement points (Living room, Kitchen, Bathroom, Bedroom)
         points = [(1, 5), (2, 1), (9, 1), (9, 7)]
         
         total_signal_sum = 0
-        signal_magnitude = self.gfu # Standard magnitude for wifi strength
-        
-        
+        signal_magnitude = self.db_signal # Standard magnitude for wifi strength
 
         print("--- Signal Strength Report ---")
 
@@ -156,12 +166,7 @@ class helmholtz():
             area = Integrate(indicator, self.mesh)
             
             if area > 0:
-                avg_strength = integral_val / area
-                
-                # Calculate dB: 20 * log10(Abs(u))
-                
-                # We add a tiny epsilon (1e-10) to avoid log(0) errors
-                avg_strength_db = np.real(20 * np.log(avg_strength + 1e-10) / np.log(10))
+                avg_strength_db = np.real(integral_val / area)
                 
             else:
                 avg_strength_db = 0
@@ -172,10 +177,29 @@ class helmholtz():
 
         print("-" * 30)
         print(f"TOTAL MEASURED SIGNAL STRENGTH: {total_signal_sum:.4f}")
+        
+        return total_signal_sum
                 
+
+
+def optimize_wifi_strength():
+    
+    sim = helmholtz(maxh=0.05)
+    sim.floor_plan_mesh()
+    
+    router_positions = [(2.5, 5.5), (8, 6), (1, 1), (8, 9)]
+    location_strength = {}
+    
+    for pos in router_positions:
+        sim.solve_helmholtz(router_pos=pos)
+        signal_sum = sim.wifi_strength()
+        location_strength.update({pos:signal_sum})
+        
+    return location_strength
 
 # if __name__=="__main__":
 
-sim = helmholtz(maxh=0.075)
-sim.solve_helmholtz(router_pos=(2.5, 5.5))
-sim.wifi_strength()
+loc_strength = optimize_wifi_strength()
+optimal_loc = max(loc_strength, key=loc_strength.get)
+
+print(f"Optimal location: {optimal_loc} with strength {loc_strength[optimal_loc]}")
