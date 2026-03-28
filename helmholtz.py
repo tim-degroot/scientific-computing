@@ -3,9 +3,10 @@ from netgen.occ import *
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
+from matplotlib.lines import Line2D
 
 
-class helmholtz():
+class Helmholtz():
     def __init__(self, maxh=0.05, scale=1, order=5):
         
         self.A = 10e4
@@ -130,7 +131,7 @@ class helmholtz():
         self.invA = self.a.mat.Inverse(self.fes.FreeDofs())
         self.gfu = GridFunction(self.fes, name="u")
 
-    def solve_helmholtz(self, router_pos):
+    def solve_helmholtz(self, router_pos, draw = False):
         
         self.router(router_pos)
         
@@ -142,9 +143,10 @@ class helmholtz():
         self.db_signal = self.amplitude_to_db(self.gfu, self.A)
         
         # Draw only if needed (-m netgen)
-        Draw(self.db_signal, self.mesh, "wifi_strength_dB", autoscale=True)
+        if draw:
+            Draw(self.db_signal, self.mesh, "wifi_strength_dB", autoscale=False, min=-90, max=0)
                         
-    def wifi_strength(self, rad=0.5):
+    def wifi_strength(self, rad=0.5, verbose=False):
         
         # Measurement points (Living room, Kitchen, Bathroom, Bedroom)
         points = [(1, 5), (2, 1), (9, 1), (9, 7)]
@@ -152,7 +154,8 @@ class helmholtz():
         total_signal_sum = 0
         signal_magnitude = self.db_signal # Standard magnitude for wifi strength
 
-        print("--- Signal Strength Report ---")
+        if verbose:
+            print("--- Signal Strength Report ---")
 
         for i, (px, py) in enumerate(points):
             
@@ -177,10 +180,12 @@ class helmholtz():
                 print(f"Warning: Point {px, py} is outside the mesh or circle is too small for maxh!")
 
             total_signal_sum += avg_strength_db
-            print(f"Room {i+1} at ({px}, {py}): Average Strength = {avg_strength_db:.4f} dB")
+            if verbose:
+                print(f"Room {i+1} at ({px}, {py}): Average Strength = {avg_strength_db:.4f} dB")
 
-        print("-" * 30)
-        print(f"TOTAL MEASURED SIGNAL STRENGTH: {total_signal_sum:.4f} dB")
+        if verbose:
+            print("-" * 30)
+            print(f"TOTAL MEASURED SIGNAL STRENGTH: {total_signal_sum:.4f} dB")
         
         return total_signal_sum
               
@@ -204,7 +209,7 @@ class helmholtz():
             return True
 
     def generate_router_positions(self, step):
-        xmin, xmax, ymin, ymax = self.bounds
+        xmin, xmax, ymin, ymax = [0, 10, 0, 8]
         xs = np.arange(xmin + step/2, xmax, step)
         ys = np.arange(ymin + step/2, ymax, step)
         positions = [(x, y) for y in ys for x in xs]
@@ -220,9 +225,17 @@ class helmholtz():
         Z = np.full((len(ys), len(xs)), np.nan)
         best_strength = -np.inf
         best_pos = None
+        
+        total = len(xs) * len(ys)
+        done = 0
 
         for iy, y in enumerate(ys):
             for ix, x in enumerate(xs):
+                
+                # Plot progess
+                done += 1
+                print(f"\rProgress: {done}/{total} positions", end="", flush=True)
+                
                 # Check if router is near wall or measure equipment
                 if not self.router_position_allowed((x, y)):
                     continue
@@ -236,19 +249,37 @@ class helmholtz():
                 if strength > best_strength:
                     best_strength = strength
                     best_pos = (x, y)
+                    
+        print()
 
         return xs, ys, Z, best_pos
 
     def plot_floorplan_overlay(self):
         ax = plt.gca()
+
+        # outer boundary only
         outer = patches.Rectangle((0, 0), 10, 8, fill=False, edgecolor="black", lw=2)
         ax.add_patch(outer)
+
+        # fill outer-wall frame
+        xmin, xmax, ymin, ymax = self.bounds
+        outer_walls = [
+            patches.Rectangle((0, 0), xmin, 8),                 # left
+            patches.Rectangle((xmax, 0), 10 - xmax, 8),         # right
+            patches.Rectangle((xmin, 0), xmax - xmin, ymin),    # bottom
+            patches.Rectangle((xmin, ymax), xmax - xmin, 8 - ymax)  # top
+        ]
+        for wall in outer_walls:
+            ax.add_patch(patches.Rectangle(wall.get_xy(), wall.get_width(), wall.get_height(),
+                                           facecolor="black", edgecolor="none"))
+
+        # fill inner walls
         for x1, y1, x2, y2 in self.wall_rects:
             wall = patches.Rectangle((x1, y1), x2 - x1, y2 - y1,
-                                        fill=False, edgecolor="black", lw=1.2)
+                                     fill=True, facecolor="black", edgecolor="black", lw=1.2)
             ax.add_patch(wall)
 
-    def plot_strength_heatmap(self, xs, ys, Z, title="Router strength heatmap"):
+    def plot_strength_heatmap(self, xs, ys, Z, best_pos=None, title="", save_path=None, show=True):
         X, Y = np.meshgrid(xs, ys)
         cmap = plt.cm.inferno
         cmap.set_bad(color="lightgray")
@@ -256,12 +287,33 @@ class helmholtz():
         plt.pcolormesh(X, Y, Z, shading="auto", cmap=cmap)
         plt.colorbar(label="Total wifi strength (dB)")
         self.plot_floorplan_overlay()
-        plt.xlabel("x [m]")
-        plt.ylabel("y [m]")
+        
+        for (x, y) in self.measurement_points:
+            plt.scatter(x, y, s=40, c='k', marker='.')
+
+        if best_pos is not None:
+            plt.scatter(best_pos[0], best_pos[1], s=50, c='k', marker='*')
+
+        legend_handles = [
+            Line2D([0], [0], marker='o', color='w', markerfacecolor='k', markersize=8,
+                   label='Measurement point'),
+            Line2D([0], [0], marker='*', color='k', markerfacecolor='k', markersize=12,
+                   label='Best router location')
+        ]
+        plt.legend(handles=legend_handles, loc='upper left')
+        
+        plt.xlabel("x (meters)")
+        plt.ylabel("y (meters)")
         plt.title(title)
         plt.gca().set_aspect("equal")
         plt.tight_layout()
         plt.show()
+        
+        if save_path is not None:
+            plt.savefig(save_path, bbox_inches="tight")
+            print(f"Plot saved to {save_path}")
+        if show:
+            plt.show()
 
     def reliability_test():
         
@@ -272,7 +324,7 @@ class helmholtz():
         mesh_loc_strength = {}
         for maxh in mesh_size:
             # set up mesh and solver
-            sim = helmholtz(maxh=maxh)
+            sim = Helmholtz(maxh=maxh)
             sim.floor_plan_mesh()
             sim.setup_solver()
             location_strength = {}
@@ -287,7 +339,7 @@ class helmholtz():
             
         return mesh_loc_strength
             
-    def plot_reliability_test(mesh_loc_strength):
+    def plot_reliability_test(mesh_loc_strength, save_path=None, show=True):
         if not mesh_loc_strength:
             return
 
@@ -307,7 +359,12 @@ class helmholtz():
         plt.grid(True, linestyle="--", alpha=0.5)
         plt.legend(title="mesh size")
         plt.tight_layout()
-        plt.show()
+        
+        if save_path:
+            plt.savefig(save_path, bbox_inches="tight")
+            print(f"Plot saved to {save_path}")
+        if show:
+            plt.show()
 
 
 
@@ -317,8 +374,20 @@ class helmholtz():
 # mesh_loc_strength = reliability_test()
 # plot_reliability_test(mesh_loc_strength)
 
-sim = helmholtz(maxh=0.08)
+PLOTS_DIR = "plots/"
+DATA_DIR = "data/"
+PLOTS_FORMAT = ".pdf"
+
+# save_path=f"{PLOTS_DIR}optimal_router_heat{PLOTS_FORMAT}",
+
+# sim = Helmholtz(maxh=0.08)
+# sim.floor_plan_mesh()
+# xs, ys, Z, best_pos = sim.optimize_wifi_strength_grid(step=2)
+# print("best position:", best_pos)
+# sim.plot_strength_heatmap(xs, ys, Z, best_pos, save_path=save_path)
+
+# Simulate best position on high res gridnet
+sim = Helmholtz(maxh=0.03)
 sim.floor_plan_mesh()
-xs, ys, Z, best_pos = sim.optimize_wifi_strength_grid(step=0.5)
-print("best position:", best_pos)
-sim.plot_strength_heatmap(xs, ys, Z)
+sim.setup_solver()
+sim.solve_helmholtz((5.15, 3.55), draw=True)
