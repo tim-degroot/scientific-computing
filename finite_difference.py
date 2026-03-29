@@ -4,26 +4,31 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 
 class finite_difference:
-    def __init__(self, rho, nu, inlet, resolution):
+    def __init__(self, Re, u_inlet, resolution):
         # Fixed domain dimensions from the image
         domain_width = 2.2  # meters
         domain_height = 0.41  # meters
 
         self.resolution = resolution  # STORE RESOLUTION FOR PLOTTING
 
-        # Fixed values for density and viscosity
-        self.rho = rho
-        self.nu = nu
+        self.Re = Re
+        self.rho = 1.0
+        self.nu = (u_inlet * 2 * 0.05) / self.Re
 
-        self.inlet = inlet
+        self.inlet = u_inlet
         self.dx = resolution
         self.dy = resolution
         self.dt = 0.001
-        # self.dt = 0.5 * min(self.dx / self.inlet, self.dx**2 / (2*self.nu))
-        print(self.dt)
 
         self.nit = 200
         self.time = 0.0
+
+        # History trackers
+        self.time_history = []
+        self.max_u_history = []
+        self.min_p_history = []
+        self.drag_history = []
+        self.lift_history = []
 
         # Calculate grid size based on resolution
         self.nx = int(domain_width / resolution)
@@ -48,8 +53,6 @@ class finite_difference:
             for j in range(self.ny):
                 if (i - cx) ** 2 + (j - cy) ** 2 <= r**2:
                     self.obstacle[i, j] = True
-
-# Dit is een test regel om aan te geven dat ik nu wat shit ga proberen waar ik mogelijk zodrekt crtl+z op knal
 
     def update_pressure(self):
         b = np.empty_like(self.p)
@@ -79,6 +82,44 @@ class finite_difference:
             self.p[:, -1] = self.p[:, -2]
             
         return self.p
+    
+    def compute_forces(self):
+        drag = 0.0
+        lift = 0.0
+
+        min_bound = int(0.10 / self.resolution)
+        max_bound = int(0.30 / self.resolution)
+
+        for i in range(min_bound, max_bound):
+            for j in range(min_bound, max_bound):
+                if self.obstacle[i, j]:
+                    continue
+
+                # Check neighbors → surface detection
+                neighbors = [
+                    (i+1, j, 1, 0),
+                    (i-1, j, -1, 0),
+                    (i, j+1, 0, 1),
+                    (i, j-1, 0, -1),
+                ]
+
+                for ni, nj, nx, ny in neighbors:
+                    if self.obstacle[ni, nj]:
+                        # Normal vector points INTO fluid
+                        p = self.p[i, j]
+
+                        # Pressure contribution
+                        drag += -p * nx * self.dy
+                        lift += -p * ny * self.dx
+
+                        # Viscous contribution (simplified shear)
+                        du_dn = (self.u[i, j] - self.u[ni, nj]) / self.dx
+                        dv_dn = (self.v[i, j] - self.v[ni, nj]) / self.dy
+
+                        drag += self.nu * du_dn * self.dy
+                        lift += self.nu * dv_dn * self.dx
+
+        return drag, lift
 
 
     def step(self):
@@ -87,7 +128,7 @@ class finite_difference:
 
         p = self.update_pressure()
 
-        # Derivatives
+        # Derivatives (upwind method)
         du_dx = np.where(n_u > 0,
                         (n_u - np.roll(n_u, 1, axis=0)) / self.dx,
                         (np.roll(n_u, -1, axis=0) - n_u) / self.dx)
@@ -146,6 +187,18 @@ class finite_difference:
 
         self.time += self.dt
 
+        # Track histories
+        self.time_history.append(self.time)
+
+        u_mag = np.sqrt(self.u**2 + self.v**2)
+        p_masked = np.where(self.obstacle, np.nan, self.p)
+        drag, lift = self.compute_forces()
+
+        self.max_u_history.append(np.max(u_mag))
+        self.min_p_history.append(np.nanmin(p_masked))
+        self.drag_history.append(drag)
+        self.lift_history.append(lift)
+
         return self.u, self.v, self.p
         
     def visualize(self, step):
@@ -174,18 +227,31 @@ class finite_difference:
             self.step()
             if step % 10 == 0:  # Visualize every 10 steps
                 self.visualize(step)
+    
+    def run(self, steps, animate=False, interval=5, steps_per_frame=1, store_every=None):
+        # Reset histories for each run
+        self.time_history = [0]
+        self.max_u_history = [1]
+        self.min_p_history = [0]
+        self.drag_history = [0]
+        self.lift_history = [0]
 
-    def run_animation(self, steps=200, interval=50):
-        """Run the simulation as an animation."""
+        if not animate:
+            print(f"Running simulation for {steps} steps...")
+            for step in range(steps):
+                self.step()
+                if isinstance(store_every, int) and (step + 1) % store_every == 0:
+                    self.visualize(step + 1)
+            print("Simulation completed.")
+            return
+
+        """ Animation mode """
         # Using a wider, shorter aspect ratio to prevent excessive whitespace
         fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 6))
 
-        # Calculate Reynolds number
-        Re = (self.inlet * 2 * 0.05) / self.nu
-
         # Add an overall title with the Reynolds number
         fig.suptitle(
-            f"Flow Past a Cylinder (Re ≈ {Re:.1f})", fontsize=16, fontweight="bold"
+            f"Flow Past a Cylinder (Re ≈ {self.Re:.1f}), u={self.inlet:.2f})", fontsize=16, fontweight="bold"
         )
 
         # Calculate physical extent: [xmin, xmax, ymin, ymax]
@@ -200,44 +266,20 @@ class finite_difference:
             u_magnitude.T, origin="lower", cmap="viridis", extent=physical_extent
         )
         ax1.set_title("Velocity Magnitude")
-        ax1.set_xlabel("Length (m)")
-        ax1.set_ylabel("Height (m)")
-        cbar1 = plt.colorbar(
-            vel_plot,
-            ax=ax1,
-            orientation="horizontal",
-            label="Velocity",
-            shrink=0.8,
-            aspect=40,
-            pad=0.18,
-        )
-        cbar1.ax.tick_params(labelsize=9)
+        plt.colorbar(vel_plot, ax=ax1, orientation="horizontal", shrink=0.8, pad=0.18,)
 
         # Plot 2: Vorticity
         vort_plot = ax2.imshow(
             vorticity.T, origin="lower", cmap="RdBu", extent=physical_extent
         )
         ax2.set_title("Vorticity")
-        ax2.set_xlabel("Length (m)")
-        ax2.set_ylabel("Height (m)")
-        cbar2 = plt.colorbar(
-            vort_plot,
-            ax=ax2,
-            orientation="horizontal",
-            label="Vorticity",
-            shrink=0.8,
-            aspect=40,
-            pad=0.18,
-        )
-        cbar2.ax.tick_params(labelsize=9)
+        plt.colorbar(vort_plot, ax=ax2, orientation="horizontal", shrink=0.8, pad=0.18)
 
         # Add time counter
         step_text = fig.text(0.5, 0.92, f"Time: 0.000 s", ha="center", fontsize=12)
 
         def update(frame):
-            for _ in range(
-                100
-            ):  # Perform multiple steps per frame for smoother animation
+            for _ in range(steps_per_frame):
                 self.step()
 
             # Update data
@@ -259,14 +301,79 @@ class finite_difference:
 
         print(f"Starting animation with interval={interval} ms...")
         ani = animation.FuncAnimation(
-            fig, update, frames=steps, interval=interval, blit=False, repeat=False
+            fig, update, frames=int(steps/steps_per_frame), interval=interval, blit=False, repeat=False
         )
         # Adjust layout to make room for the suptitle and horizontal colorbars
         plt.subplots_adjust(top=0.85, bottom=0.1, hspace=0.5)
         plt.show()
         print("Animation completed.")
+    
+    def plot_histories(self, show=True, save_path=None):
+        """
+        Plot time histories of max velocity, min pressure, lift, and drag.
+        """
+        fig, axs = plt.subplots(2, 2, figsize=(12, 8))
+        fig.suptitle(r"FDM Simulation: Physical Quantities over Time")
+
+        # Left: Max Absolute Velocity
+        axs[0,0].plot(self.time_history, self.max_u_history, color="tab:red")
+        axs[0,0].set_title(r"Max Absolute Velocity ($|\mathbf{u}|_{\max}$)")
+        axs[0,0].set_xlabel("Time")
+        axs[0,0].set_ylabel(r"Velocity ($|\mathbf{u}|$) (lu/ts)")
+        axs[0,0].grid(True, alpha=0.3)
+
+        # Right: Min Pressure
+        axs[0,1].plot(self.time_history, self.min_p_history, color="tab:blue")
+        axs[0,1].set_title(r"Minimum Pressure ($p_{\min}$)")
+        axs[0,1].set_xlabel("Time")
+        axs[0,1].set_ylabel("Pressure (lu)")
+        axs[0,1].grid(True, alpha=0.3)
+
+        # Bottom Left: Lift (Accuracy/Shedding)
+        axs[1, 0].plot(self.lift_history, color="tab:orange")
+        axs[1, 0].set_title(r"Lift Force ($F_L$)")
+        axs[1, 0].set_xlabel("Time")
+        axs[1, 0].set_ylabel(r"$F_L$ (lu)")
+        axs[1, 0].grid(True, alpha=0.3)
+
+        # Bottom Right: Drag (Stability)
+        axs[1, 1].plot(self.drag_history, color="tab:green")
+        axs[1, 1].set_title(r"Drag Force ($F_D$)")
+        axs[1, 1].set_xlabel("Time")
+        axs[1, 1].set_ylabel(r"$F_D$ (lu)")
+        axs[1, 1].grid(True, alpha=0.3)
+
+        plt.tight_layout()
+        if save_path:
+            plt.savefig(save_path, bbox_inches="tight")
+            print(f"Plot saved to {save_path}")
+        if show:
+            plt.show()
+
+        
+experiments = [
+        {"resolution": 0.005, "Re": 100, "u_inlet": 1, "steps": 10000},
+        # {"resolution": 0.005, "Re": 150, "u_inlet": 1, "steps": 10000},
+        # {"resolution": 0.005, "Re": 200, "u_inlet": 1, "steps": 10000},
+        {"resolution": 0.005, "Re": 250, "u_inlet": 1, "steps": 10000},
+        {"resolution": 0.005, "Re": 500, "u_inlet": 1, "steps": 10000},
+        {"resolution": 0.005, "Re": 750, "u_inlet": 1, "steps": 10000},
+        {"resolution": 0.005, "Re": 1000, "u_inlet": 1, "steps": 10000},
+        # {"resolution": 0.005, "Re": 1500, "u_inlet": 1, "steps": 10000},
+        # {"resolution": 0.005, "Re": 5000, "u_inlet": 1, "steps": 10000},
+        {"resolution": 0.005, "Re": 10000, "u_inlet": 1, "steps": 10000},
+    ]
 
 
-model = finite_difference(resolution=0.005, rho=1.0, nu=0.001, inlet=1)
-print("Showing animation to demonstrate functionality...")
-model.run_animation(steps=100, interval=50)
+for i, params in enumerate(experiments):
+    resolution, Re, u_inlet, steps = params.values()
+    print(f"\nRunning experiment {i+1} with Re={Re}, u_inlet={u_inlet}")
+
+    # Instantiate model
+    fdm = finite_difference(Re, u_inlet, resolution)
+
+    # Unified runner call
+    fdm.run(steps=steps, animate=True, interval=5, steps_per_frame=10)
+    print("   Simulation completed.")
+
+    fdm.plot_histories(show=True)
