@@ -121,11 +121,11 @@ class NavierStokesSolver:
                 
         return times, drags, lifts 
 
-# --- Example Usage ---
-solver = NavierStokesSolver(nu=0.001, tau=0.0005, tend=5.0)
-solver.make_mesh(maxh=0.07)
-solver.setup_spaces()
-solver.set_inflow(max_vel=1.5)
-solver.assemble_system()
-solver.solve_initial_stokes()
-solver.run_simulation()
+# # --- Example Usage ---
+# solver = NavierStokesSolver(nu=0.001, tau=0.0005, tend=5.0)
+# solver.make_mesh(maxh=0.07)
+# solver.setup_spaces()
+# solver.set_inflow(max_vel=1.5)
+# solver.assemble_system()
+# solver.solve_initial_stokes()
+# solver.run_simulation()

@@ -12,6 +12,8 @@ The numerical methods for Kármán vortex streets were distributes as follows:
 2. finite elements (ngsolve): Theyn
 3. lattice Boltzmann: Tim
 
+The WiFi location optimization was done by Theyn.
+
 ## Git fame distribution of the repository
 
 Date and time: 08-03-2026 T 19:36

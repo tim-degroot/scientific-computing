@@ -30,27 +30,70 @@ Alternatively, you can use `uv sync` to manually update the environment in `.ven
 
 ## Project Structure
 
-- `main.py`: The entry point. Handles simulation loops, parameter configuration, and plotting output. 
+- `main.py`: The entry point. Handles simulation loops, parameter configuration, and plotting output.
+    - Imports and runs the finite element, finite difference, lattice Boltzmann, and Helmholtz simulations.
     - Usage: `uv run main.py [--hide]`
-    - The `--hide` flag suppresses interactive plot windows for faster output generation. It also hides the live animation of the simulation which is not saved.
-- `pyproject.toml`: Defines the project dependencies and Python version.
+    - The `--hide` flag suppresses interactive plot windows and animation during simulation.
+- `finite_element.py`: Contains `NavierStokesSolver`, which builds the 2D mesh, defines the mixed velocity-pressure finite element space, assembles the Stokes/implicit Euler matrices, and computes drag/lift on the cylinder.
+- `finite_difference.py`: Implements the finite difference solver used by the FDM experiments in `main.py`.
+- `lbm.py`: Implements the `D2Q9LBM` lattice Boltzmann model used by the LBM experiments in `main.py`.
+- `helmholtz.py`: Implements the `Helmholtz` solver used for the WiFi/router placement reliability test in `main.py`.
+- `pyproject.toml`: Defines the Python version and package dependencies required to run `main.py`.
+- `data/`: Runtime data directory created by `main.py`. It is currently prepared for any saved data output.
+- `plots/`: Output directory where `main.py` saves generated figures and result plots.
+
+## Running `main.py`
+
+1. From the repository root, install or sync the environment:
+
+```bash
+uv sync
+```
+
+2. Run the full simulation with interactive plots:
+
+```bash
+uv run main.py
+```
+
+3. Run headlessly and save figures only:
+
+```bash
+uv run main.py --hide
+```
+
+4. If you prefer a standard environment, install the package locally:
+
+```bash
+pip install .
+```
+
+Then run:
+
+```bash
+python main.py
+```
 
 ## Generated Artifacts
 
 ### Figures
 
-All figures are automatically generated and saved in the `/plots/` directory. Figures are also displayed via an interactive window during runtime unless the `--hide` argument is passed. 
+All figures are automatically generated and saved in the `/plots/` directory. Figures are also displayed via an interactive window during runtime unless the `--hide` argument is passed.
 
 Location: `/plots/`
 
-- `fdm_Re_100.pdf`: Physical Quantities over time within the Finite Difference Method simulation with $r=0.005$, $\text{Re}=100$, $u_\text{inlet}=1.0$, for 10 seconds (10,000 steps).
-- `fdm_Re_250.pdf`: Physical Quantities over time within the Finite Difference Method simulation with $r=0.005$, $\text{Re}=250$, $u_\text{inlet}=1.0$, for 10 seconds (10,000 steps).
-- `fdm_Re_500.pdf`: Physical Quantities over time within the Finite Difference Method simulation with $r=0.005$, $\text{Re}=500$, $u_\text{inlet}=1.0$, for 10 seconds (10,000 steps).
-- `fdm_Re_750.pdf`: Physical Quantities over time within the Finite Difference Method simulation with $r=0.005$, $\text{Re}=750$, $u_\text{inlet}=1.0$, for 10 seconds (10,000 steps).
-- `fdm_Re_1000.pdf`: Physical Quantities over time within the Finite Difference Method simulation with $r=0.005$, $\text{Re}=1000$, $u_\text{inlet}=1.0$, for 10 seconds (10,000 steps).
-- `fdm_Re_10000.pdf`: Physical Quantities over time within the Finite Difference Method simulation with $r=0.005$, $\text{Re}=10000$, $u_\text{inlet}=1.0$, for 10 seconds (10,000 steps).
-- `lbm_r0.005_Re100_u0.12_steps10000.pdf`: Physical Quantities over time within the Lattice Boltzmann Method simulation with $r=0.005$, $\text{Re}=100$, $u_\text{inlet}=0.12$, for 10,000 steps.
-- `lbm_r0.005_Re150_u0.12_steps10000.pdf`: Physical Quantities over time within the Lattice Boltzmann Method simulation with $r=0.005$, $\text{Re}=150$, $u_\text{inlet}=0.12$, for 10,000 steps.
-- `lbm_r0.005_Re200_u0.12_steps15000.pdf`: Physical Quantities over time within the Lattice Boltzmann Method simulation with $r=0.005$, $\text{Re}=200$, $u_\text{inlet}=0.12$, for 15,000 steps.
-- `lbm_r0.005_Re225_u0.12_steps15000.pdf`: Physical Quantities over time within the Lattice Boltzmann Method simulation with $r=0.005$, $\text{Re}=225$, $u_\text{inlet}=0.12$, for 15,000 steps.
-- `lbm_r0.005_Re250_u0.12_steps15000.pdf`: Physical Quantities over time within the Lattice Boltzmann Method simulation with $r=0.005$, $\text{Re}=250$, $u_\text{inlet}=0.12$, for 15,000 steps.
+- `lbm_r0.005_Re100_u1_steps10000.pdf`: Physical Quantities over time for the Finite Difference Method simulation with $r=0.005$, $\text{Re}=100$, $u_\text{inlet}=1.0$, for 10,000 steps.
+- `lbm_r0.005_Re250_u1_steps10000.pdf`: Physical Quantities over time for the Finite Difference Method simulation with $r=0.005$, $\text{Re}=250$, $u_\text{inlet}=1.0$, for 10,000 steps.
+- `lbm_r0.005_Re500_u1_steps10000.pdf`: Physical Quantities over time for the Finite Difference Method simulation with $r=0.005$, $\text{Re}=500$, $u_\text{inlet}=1.0$, for 10,000 steps.
+- `lbm_r0.005_Re750_u1_steps10000.pdf`: Physical Quantities over time for the Finite Difference Method simulation with $r=0.005$, $\text{Re}=750$, $u_\text{inlet}=1.0$, for 10,000 steps.
+- `lbm_r0.005_Re1000_u1_steps10000.pdf`: Physical Quantities over time for the Finite Difference Method simulation with $r=0.005$, $\text{Re}=1000$, $u_\text{inlet}=1.0$, for 10,000 steps.
+- `lbm_r0.005_Re10000_u1_steps10000.pdf`: Physical Quantities over time for the Finite Difference Method simulation with $r=0.005$, $\text{Re}=10000$, $u_\text{inlet}=1.0$, for 10,000 steps.
+- `lbm_r0.005_Re100_u0.12_steps10000.pdf`: Physical Quantities over time for the Lattice Boltzmann Method simulation with $r=0.005$, $\text{Re}=100$, $u_\text{inlet}=0.12$, for 10,000 steps.
+- `lbm_r0.005_Re150_u0.12_steps10000.pdf`: Physical Quantities over time for the Lattice Boltzmann Method simulation with $r=0.005$, $\text{Re}=150$, $u_\text{inlet}=0.12$, for 10,000 steps.
+- `lbm_r0.005_Re200_u0.12_steps15000.pdf`: Physical Quantities over time for the Lattice Boltzmann Method simulation with $r=0.005$, $\text{Re}=200$, $u_\text{inlet}=0.12$, for 15,000 steps.
+- `lbm_r0.005_Re225_u0.12_steps15000.pdf`: Physical Quantities over time for the Lattice Boltzmann Method simulation with $r=0.005$, $\text{Re}=225$, $u_\text{inlet}=0.12$, for 15,000 steps.
+- `lbm_r0.005_Re250_u0.12_steps15000.pdf`: Physical Quantities over time for the Lattice Boltzmann Method simulation with $r=0.005$, $\text{Re}=250$, $u_\text{inlet}=0.12$, for 15,000 steps.
+- `FEM_mesh_convergence.pdf`: Comparison of FEM drag and lift over time for coarse, medium, and fine meshes.
+- `FEM_Re_push.pdf`: FEM drag and lift over time for the pushed Reynolds-number stability test.
+- `reliability_test.pdf`: Total WiFi strength versus router position for different mesh sizes in the Helmholtz reliability test.
+- `optimal_router_heat.pdf`: WiFi strength heatmap showing the best router location in the floor-plan optimization.
