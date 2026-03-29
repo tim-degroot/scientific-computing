@@ -43,6 +43,12 @@ All figures are automatically generated and saved in the `/plots/` directory. Fi
 
 Location: `/plots/`
 
+- `fdm_Re_100.pdf`: Physical Quantities over time within the Finite Difference Method simulation with $r=0.005$, $\text{Re}=100$, $u_\text{inlet}=1.0$, for 10 seconds (10,000 steps).
+- `fdm_Re_250.pdf`: Physical Quantities over time within the Finite Difference Method simulation with $r=0.005$, $\text{Re}=250$, $u_\text{inlet}=1.0$, for 10 seconds (10,000 steps).
+- `fdm_Re_500.pdf`: Physical Quantities over time within the Finite Difference Method simulation with $r=0.005$, $\text{Re}=500$, $u_\text{inlet}=1.0$, for 10 seconds (10,000 steps).
+- `fdm_Re_750.pdf`: Physical Quantities over time within the Finite Difference Method simulation with $r=0.005$, $\text{Re}=750$, $u_\text{inlet}=1.0$, for 10 seconds (10,000 steps).
+- `fdm_Re_1000.pdf`: Physical Quantities over time within the Finite Difference Method simulation with $r=0.005$, $\text{Re}=1000$, $u_\text{inlet}=1.0$, for 10 seconds (10,000 steps).
+- `fdm_Re_10000.pdf`: Physical Quantities over time within the Finite Difference Method simulation with $r=0.005$, $\text{Re}=10000$, $u_\text{inlet}=1.0$, for 10 seconds (10,000 steps).
 - `lbm_r0.005_Re100_u0.12_steps10000.pdf`: Physical Quantities over time within the Lattice Boltzmann Method simulation with $r=0.005$, $\text{Re}=100$, $u_\text{inlet}=0.12$, for 10,000 steps.
 - `lbm_r0.005_Re150_u0.12_steps10000.pdf`: Physical Quantities over time within the Lattice Boltzmann Method simulation with $r=0.005$, $\text{Re}=150$, $u_\text{inlet}=0.12$, for 10,000 steps.
 - `lbm_r0.005_Re200_u0.12_steps15000.pdf`: Physical Quantities over time within the Lattice Boltzmann Method simulation with $r=0.005$, $\text{Re}=200$, $u_\text{inlet}=0.12$, for 15,000 steps.

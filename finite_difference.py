@@ -318,28 +318,28 @@ class finite_difference:
         # Left: Max Absolute Velocity
         axs[0,0].plot(self.time_history, self.max_u_history, color="tab:red")
         axs[0,0].set_title(r"Max Absolute Velocity ($|\mathbf{u}|_{\max}$)")
-        axs[0,0].set_xlabel("Time")
+        axs[0,0].set_xlabel("Time (s)")
         axs[0,0].set_ylabel(r"Velocity ($|\mathbf{u}|$) (lu/ts)")
         axs[0,0].grid(True, alpha=0.3)
 
         # Right: Min Pressure
         axs[0,1].plot(self.time_history, self.min_p_history, color="tab:blue")
         axs[0,1].set_title(r"Minimum Pressure ($p_{\min}$)")
-        axs[0,1].set_xlabel("Time")
+        axs[0,1].set_xlabel("Time (s)")
         axs[0,1].set_ylabel("Pressure (lu)")
         axs[0,1].grid(True, alpha=0.3)
 
         # Bottom Left: Lift (Accuracy/Shedding)
-        axs[1, 0].plot(self.lift_history, color="tab:orange")
+        axs[1, 0].plot(self.time_history, self.lift_history, color="tab:orange")
         axs[1, 0].set_title(r"Lift Force ($F_L$)")
-        axs[1, 0].set_xlabel("Time")
+        axs[1, 0].set_xlabel("Time (s)")
         axs[1, 0].set_ylabel(r"$F_L$ (lu)")
         axs[1, 0].grid(True, alpha=0.3)
 
         # Bottom Right: Drag (Stability)
-        axs[1, 1].plot(self.drag_history, color="tab:green")
+        axs[1, 1].plot(self.time_history, self.drag_history, color="tab:green")
         axs[1, 1].set_title(r"Drag Force ($F_D$)")
-        axs[1, 1].set_xlabel("Time")
+        axs[1, 1].set_xlabel("Time (s)")
         axs[1, 1].set_ylabel(r"$F_D$ (lu)")
         axs[1, 1].grid(True, alpha=0.3)
 
@@ -349,31 +349,3 @@ class finite_difference:
             print(f"Plot saved to {save_path}")
         if show:
             plt.show()
-
-        
-experiments = [
-        {"resolution": 0.005, "Re": 100, "u_inlet": 1, "steps": 10000},
-        # {"resolution": 0.005, "Re": 150, "u_inlet": 1, "steps": 10000},
-        # {"resolution": 0.005, "Re": 200, "u_inlet": 1, "steps": 10000},
-        {"resolution": 0.005, "Re": 250, "u_inlet": 1, "steps": 10000},
-        {"resolution": 0.005, "Re": 500, "u_inlet": 1, "steps": 10000},
-        {"resolution": 0.005, "Re": 750, "u_inlet": 1, "steps": 10000},
-        {"resolution": 0.005, "Re": 1000, "u_inlet": 1, "steps": 10000},
-        # {"resolution": 0.005, "Re": 1500, "u_inlet": 1, "steps": 10000},
-        # {"resolution": 0.005, "Re": 5000, "u_inlet": 1, "steps": 10000},
-        {"resolution": 0.005, "Re": 10000, "u_inlet": 1, "steps": 10000},
-    ]
-
-
-for i, params in enumerate(experiments):
-    resolution, Re, u_inlet, steps = params.values()
-    print(f"\nRunning experiment {i+1} with Re={Re}, u_inlet={u_inlet}")
-
-    # Instantiate model
-    fdm = finite_difference(Re, u_inlet, resolution)
-
-    # Unified runner call
-    fdm.run(steps=steps, animate=True, interval=5, steps_per_frame=10)
-    print("   Simulation completed.")
-
-    fdm.plot_histories(show=True)
